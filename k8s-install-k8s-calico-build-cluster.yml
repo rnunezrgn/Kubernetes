@@ -1,0 +1,63 @@
+---
+- name: Install and initialize k8s, calico network and setup user
+  hosts: master
+  become: true
+  tasks:
+    - name: Install Docker
+      ansible.builtin.dnf:
+        name: docker.io
+        state: present
+
+    - name: Install kubeadm, kubelet, and kubectl
+      ansible.builtin.dnf:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - kubeadm
+        - kubelet
+        - kubectl
+
+    - name: Initialize Kubernetes master
+      ansible.builtin.command: kubeadm init --pod-network-cidr=10.244.0.0/16
+      register: kubeadm_output
+      ignore_errors: true
+      changed_when: kubeadm_output.rc !=
+
+    - name: Set up kubectl for the current user
+      ansible.builtin.command: "{{ item }}"
+      with_items:
+        - "mkdir -p $HOME/.kube"
+        - "cp /etc/kubernetes/admin.conf $HOME/.kube/config"
+        - "chown $(id -u):$(id -g) $HOME/.kube/config"
+      register: kubectl_output
+      changed_when: kubectl_output.rc !=
+
+    - name: Install Calico network plugin
+      ansible.builtin.command: kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+      when: "'calico' in kubeadm_output.stdout"
+      register: calico_output
+      changed_when: calico_output.rc !=
+
+- name: Setup a Kubernetes Cluster
+  hosts: workers
+  become: true
+  tasks:
+    - name: Install Docker
+      ansible.builtin.dnf:
+        name: docker.io
+        state: present
+
+    - name: Install kubeadm, kubelet, and kubectl
+      ansible.builtin.dnf:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - kubeadm
+        - kubelet
+        - kubectl
+
+    - name: Join worker nodes to the cluster
+      ansible.builtin.command: "{{ hostvars['master']['kubeadm_output']['stdout_lines'][0] }}"
+      when: "'kubeadm join' in hostvars['master']['kubeadm_output']['stdout']"
+      register: join_output
+      changed_when: join_output.rc !=
