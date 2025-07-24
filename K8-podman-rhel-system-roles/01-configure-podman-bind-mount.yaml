@@ -1,4 +1,4 @@
-- name: Configure Podman
+- name: Configure Podman and use the RHEL system role to create rootless containers with BIND MOUNT 
   hosts: managed-node-01.example.com
   tasks:
     - name: Create a web application and a database
