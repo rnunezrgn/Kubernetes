@@ -4,5 +4,5 @@ You can use the podman RHEL system role to create rootless containers with bind 
 
 2. The second https://github.com/rnunezrgn/Kubernetes/blob/main/K8-podman-rhel-system-roles/configure-rootful-container-with-podman-volume.yml playbook create a rootful container with a Podman volume by running an Ansible playbook and with that, manage your application configuration.
 
-The example Ansible playbook deploys a Kubernetes pod named ubi8-httpd running an HTTP server container from the registry.access.redhat.com/ubi8/httpd-24 image. The container’s web content is mounted from a persistent volume named ubi8-html-volume. By default, the podman role creates rootful containers.
+   This last playbook deploys a Kubernetes pod named ubi8-httpd running an HTTP server container from the registry.access.redhat.com/ubi8/httpd-24 image. The container’s web content is mounted from a persistent volume named ubi8-html-volume. By default, the podman role creates rootful containers.
 
