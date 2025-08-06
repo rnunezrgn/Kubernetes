@@ -5,7 +5,7 @@
   tasks:
     - name: Install Docker
       ansible.builtin.dnf:
-        name: docker.io
+        name: docker
         state: present
 
     - name: Install kubeadm, kubelet, and kubectl
