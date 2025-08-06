@@ -177,6 +177,15 @@
           exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
       tags: kubernetes-repo
 
+    - name: Uninstall Kubernetes tools (kubelet, kubeadm, kubectl)
+      ansible.builtin.dnf:
+        name: 
+          - kubelet
+          - kubeadm
+          - kubectl
+        state: absent
+      tags: kubernetes-tools-uninstall
+
     - name: Install Kubernetes tools (kubelet, kubeadm, kubectl)
       ansible.builtin.dnf:
         name: 
