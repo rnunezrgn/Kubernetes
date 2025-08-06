@@ -322,6 +322,7 @@
         owner: "{{ ansible_user }}"
         group: "{{ ansible_user }}"
         mode: '0644'
+        remote_src: true
       when: inventory_hostname == "k8s-master01"
       tags: kube-config
 
