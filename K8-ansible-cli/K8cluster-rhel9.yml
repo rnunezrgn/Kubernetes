@@ -28,6 +28,7 @@
       loop:
         - python3
         - python3-pip
+        - python3-firewall
 
     - name: Install necessary Python libraries dependencies using pip
       ansible.builtin.pip:
@@ -102,6 +103,10 @@
         - 30000-32767/tcp
         - 4789/udp
       when: inventory_hostname != "k8s-master01"
+
+    - name: Reload firewalld to apply changes
+      firewalld:
+        state: reloaded
 
     - name: Load necessary kernel modules for Kubernetes
       ansible.builtin.shell:
