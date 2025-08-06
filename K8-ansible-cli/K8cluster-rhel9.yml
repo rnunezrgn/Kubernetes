@@ -11,6 +11,21 @@
         name: '*'
         state: latest
         
+    - name: Install pip if not present
+      ansible.builtin.yum:
+        name: python3-pip
+        state: present
+      when: ansible_facts.packages['python3-pip'] is not defined
+
+    - name: Install necessary Python libraries dependencies using pip
+      ansible.builtin.pip:
+        name:
+          - ansible
+          - docker
+          - kubernetes
+          - paramiko
+        state: present
+        
     - name: Set hostname for the control plane node
       ansible.builtin.hostname:
         name: "k8s-master01"
