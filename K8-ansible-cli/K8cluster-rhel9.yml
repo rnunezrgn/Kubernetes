@@ -78,11 +78,11 @@
         cmd: setenforce 0
       tags: selinux
 
-    - name: Update SELinux configuration to permissive mode
+    - name: Update SELinux configuration to disabled (no more permissive) mode
       ansible.builtin.lineinfile:
         path: /etc/sysconfig/selinux
         regexp: '^SELINUX='
-        line: "SELINUX=permissive"
+        line: "SELINUX=disabled"
       tags: selinux
 
 #    - name: Open necessary firewall ports for Kubernetes (Control Plane)
@@ -146,14 +146,16 @@
         state: present
       tags: containerd
 
-    - name: Configure containerd to use systemd as cgroup driver
-      ansible.builtin.lineinfile:
+    - name: Create containerd default config
+      shell: "containerd config default > /etc/containerd/config.toml"
+      args:
+        creates: /etc/containerd/config.toml
+    
+    - name: Ensure Systemd cgroup is set in containerd config
+      replace:
         path: /etc/containerd/config.toml
-        regexp: '^SystemdCgroup'
-        line: "SystemdCgroup = true"
-      notify:
-        - restart containerd
-      tags: containerd-config
+        regexp: 'SystemdCgroup = false'
+        replace: 'SystemdCgroup = true'
 
     - name: Restart containerd service
       ansible.builtin.systemd:
