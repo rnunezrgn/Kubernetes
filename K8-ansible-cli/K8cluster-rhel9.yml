@@ -264,9 +264,9 @@
       ansible.builtin.command: crictl info
       register: crictl_result
       
-    - name: Show pip version
+    - name: Show pip, contained version, and crictl version
       ansible.builtin.debug:
-        msg: "The {{ pip_result }}, containerd {{ cont_results }} version and Crictl information is: {{ crictl_result }}"
+        msg: "The {{ pip_result }}, containerd {{ cont_result }} version and Crictl information is: {{ crictl_result }}"
 
     - name: Install Kubernetes repository
       ansible.builtin.copy:
