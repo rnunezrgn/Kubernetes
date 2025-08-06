@@ -17,6 +17,10 @@
         - kubelet
         - kubectl
 
+    - name: Install Kubernetes Python client
+      ansible.builtin.pip:
+        name: kubernetes
+
     - name: Initialize Kubernetes master
       ansible.builtin.command: kubeadm init --pod-network-cidr=10.244.0.0/16
       register: kubeadm_output
