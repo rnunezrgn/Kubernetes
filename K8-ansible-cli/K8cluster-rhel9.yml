@@ -177,7 +177,24 @@
             }
           }
       tags: crictl-10-containerd
-    
+
+    - name: Comment out 'disabled_plugins = ["cri"]'
+      ansible.builtin.lineinfile:
+        path: /etc/containerd/config.toml
+        regexp: '^(\s*)disabled_plugins\s*=\s*\["cri"\]'
+        line: '# \g<0>'
+        backrefs: yes
+
+    - name: Ensure enabled_plugins and grpc cri plugin config are present
+      ansible.builtin.blockinfile:
+        path: /etc/containerd/config.toml
+        marker: "# {mark} ANSIBLE MANAGED BLOCK - containerd cri config"
+        block: |
+          enabled_plugins = ["cri"]
+          [plugins."io.containerd.grpc.v1.cri".containerd]
+            endpoint = "unix:///var/run/containerd/containerd.sock"
+        insertafter: EOF
+        
     - name: Ensure Systemd cgroup is set in containerd config
       replace:
         path: /etc/containerd/config.toml
