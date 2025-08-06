@@ -308,11 +308,16 @@
         enabled: true
       tags: kubelet
 
+    - name: Check if Kubernetes is already initialized
+      stat:
+        path: /etc/kubernetes/admin.conf
+      register: kubeadm_already_initialized
+      
     - name: Initialize Kubernetes master node
       ansible.builtin.shell:
         cmd: kubeadm init --control-plane-endpoint=k8s-master01
       when: inventory_hostname == "k8s-master01"
-      register: kubeadm_init_output
+      register: kubeadm_init_output and not kubeadm_already_initialized.stat.exists
       tags: kubeadm-init
 
     - name: Copy Kubeadm config file to user's home directory
@@ -324,6 +329,8 @@
         mode: '0644'
         remote_src: true
       when: inventory_hostname == "k8s-master01"
+      # and kubeadm_already_initialized.stat.exists or
+      #      (not kubeadm_already_initialized.stat.exists and ansible_facts['ansible_user'] != 'root')
       tags: kube-config
 
     - name: Join Kubernetes worker node to the cluster
