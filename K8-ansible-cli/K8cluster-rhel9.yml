@@ -43,7 +43,7 @@
     - name: Ensure firewalld is started and enabled
       service:
         name: firewalld
-        state: absent
+        state: stopped
 #        enabled: true
         
 #    - name: Return pip3 version
