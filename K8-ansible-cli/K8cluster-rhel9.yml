@@ -30,6 +30,7 @@
         - python3-pip
         - python3-firewall
         - firewalld
+        - cri-tools
 
     - name: Install necessary Python libraries dependencies using pip
       ansible.builtin.pip:
@@ -39,15 +40,19 @@
           - kubernetes
           - paramiko
         state: present
+
+    - name: Configure crictl.yaml
+      ansible.builtin.copy:
+        dest: /etc/crictl.yaml
+        content: |
+          runtime-endpoint: unix:///var/run/containerd/containerd.sock
+      tags: crictl-config
         
     - name: Ensure firewalld is started and enabled
       service:
         name: firewalld
         state: stopped
 #        enabled: true
-        
-#    - name: Return pip3 version
-#      ansible.builtin.command: pip3 -V
   
     - name: Set hostname for the control plane node
       ansible.builtin.hostname:
@@ -163,6 +168,22 @@
         state: restarted
         enabled: true
       tags: containerd
+
+    - name: Return pip3 version
+      ansible.builtin.command: pip3 -V
+      register: pip_result
+
+    - name: Return containerd version
+      ansible.builtin.command: containerd --version
+      register: cont_result
+
+    - name: Return crictl info
+      ansible.builtin.command: crictl info
+      register: crictl_result
+      
+    - name: Show pip version
+      ansible.builtin.debug:
+        msg: "The {{ pip_result }}, containerd {{ cont_results }} version and Crictl information is: {{ crictl_result }}"
 
     - name: Install Kubernetes repository
       ansible.builtin.copy:
