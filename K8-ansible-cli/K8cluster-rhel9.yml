@@ -31,7 +31,6 @@
         - python3-firewall
         - firewalld
         - cri-tools
-        - cni-plugins
 
     - name: Install necessary Python libraries dependencies using pip
       ansible.builtin.pip:
@@ -41,34 +40,6 @@
           - kubernetes
           - paramiko
         state: present
-
-    - name: Configure crictl.yaml
-      ansible.builtin.copy:
-        dest: /etc/crictl.yaml
-        content: |
-          runtime-endpoint: unix:///var/run/containerd/containerd.sock
-      tags: crictl-config
-
-    - name: Configure /etc/cni/netd/10-containerd.conf
-      ansible.builtin.copy:
-        dest: /etc/cni/netd/10-containerd.conf
-        content: |
-          {
-            "cniVersion": "0.4.0",
-            "name": "containerd-network",
-            "type": "bridge",
-            "bridge": "cni0",
-            "isGateway": true,
-            "ipMasq": true,
-            "ipam": {
-              "type": "host-local",
-              "subnet": "10.1.0.0/16",
-              "rangeStart": "10.1.0.10",
-              "rangeEnd": "10.1.0.50",
-              "gateway": "10.1.0.1"
-            }
-          }
-      tags: crictl-10-containerd
         
     - name: Ensure firewalld is started and enabled
       service:
@@ -169,7 +140,9 @@
 
     - name: Install containerd
       ansible.builtin.dnf:
-        name: containerd.io
+        name: 
+          - containerd.io
+          - cni-plugins
         state: present
       tags: containerd
 
@@ -177,6 +150,34 @@
       shell: "containerd config default > /etc/containerd/config.toml"
       args:
         creates: /etc/containerd/config.toml
+
+    - name: Configure crictl.yaml
+      ansible.builtin.copy:
+        dest: /etc/crictl.yaml
+        content: |
+          runtime-endpoint: unix:///var/run/containerd/containerd.sock
+      tags: crictl-config
+
+    - name: Configure /etc/cni/netd/10-containerd.conf
+      ansible.builtin.copy:
+        dest: /etc/cni/netd/10-containerd.conf
+        content: |
+          {
+            "cniVersion": "0.4.0",
+            "name": "containerd-network",
+            "type": "bridge",
+            "bridge": "cni0",
+            "isGateway": true,
+            "ipMasq": true,
+            "ipam": {
+              "type": "host-local",
+              "subnet": "10.1.0.0/16",
+              "rangeStart": "10.1.0.10",
+              "rangeEnd": "10.1.0.50",
+              "gateway": "10.1.0.1"
+            }
+          }
+      tags: crictl-10-containerd
     
     - name: Ensure Systemd cgroup is set in containerd config
       replace:
