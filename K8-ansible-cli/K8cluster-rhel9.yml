@@ -43,11 +43,11 @@
     - name: Ensure firewalld is started and enabled
       service:
         name: firewalld
-        state: started
-        enabled: true
+        state: absent
+#        enabled: true
         
-    - name: Return pip3 version
-      ansible.builtin.command: pip3 -V
+#    - name: Return pip3 version
+#      ansible.builtin.command: pip3 -V
   
     - name: Set hostname for the control plane node
       ansible.builtin.hostname:
@@ -85,35 +85,35 @@
         line: "SELINUX=permissive"
       tags: selinux
 
-    - name: Open necessary firewall ports for Kubernetes (Control Plane)
-      ansible.builtin.firewalld:
-        permanent: true
-        service: "{{ item }}"
-        state: enabled
-      loop:
-        - 6443/tcp
-        - 2379-2380/tcp
-        - 10250-10252/tcp
-        - 10257-10259/tcp
-        - 179/tcp
-        - 4789/udp
-      when: inventory_hostname == "k8s-master01"
+#    - name: Open necessary firewall ports for Kubernetes (Control Plane)
+#      ansible.builtin.firewalld:
+#        permanent: true
+#        service: "{{ item }}"
+#        state: enabled
+#      loop:
+#        - 6443/tcp
+#        - 2379-2380/tcp
+#        - 10250-10252/tcp
+#        - 10257-10259/tcp
+#        - 179/tcp
+#        - 4789/udp
+#      when: inventory_hostname == "k8s-master01"
 
-    - name: Open necessary firewall ports for Kubernetes (Worker Nodes)
-      ansible.builtin.firewalld:
-        permanent: true
-        service: "{{ item }}"
-        state: enabled
-      loop:
-        - 179/tcp
-        - 10250/tcp
-        - 30000-32767/tcp
-        - 4789/udp
-      when: inventory_hostname != "k8s-master01"
+#    - name: Open necessary firewall ports for Kubernetes (Worker Nodes)
+#      ansible.builtin.firewalld:
+#        permanent: true
+#        service: "{{ item }}"
+#        state: enabled
+#      loop:
+#        - 179/tcp
+#        - 10250/tcp
+#        - 30000-32767/tcp
+#        - 4789/udp
+#      when: inventory_hostname != "k8s-master01"
 
-    - name: Reload firewalld to apply changes
-      firewalld:
-        state: reloaded
+#    - name: Reload firewalld to apply changes
+#      firewalld:
+#        state: reloaded
 
     - name: Load necessary kernel modules for Kubernetes
       ansible.builtin.shell:
