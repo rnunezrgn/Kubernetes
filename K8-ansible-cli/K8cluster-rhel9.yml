@@ -1,0 +1,177 @@
+---
+- name: Install Kubernetes on RHEL 9
+  hosts: all
+  become: true
+  vars:
+    k8s_master_ip: "k8s-master01"  # Update this with your actual master node hostname or IP
+
+  tasks:
+    - name: Upgrading all RHEL packages to Latest
+      ansible.builtin.dnf:
+        name: '*'
+        state: latest
+        
+    - name: Set hostname for the control plane node
+      ansible.builtin.hostname:
+        name: "k8s-master01"
+      when: inventory_hostname == "k8s-master01"
+
+    - name: Set hostname for the worker nodes
+      ansible.builtin.hostname:
+        name: "k8s-worker{{ ansible_hostname[-2:] }}"
+      when: inventory_hostname != "k8s-master01"
+
+    - name: Update /etc/hosts file
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        line: "{{ ansible_host }} k8s-master01"
+      when: inventory_hostname == "k8s-master01"
+
+    - name: Disable swap space on each node
+      ansible.builtin.shell:
+        cmd: |
+          swapoff -a
+          sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+      ignore_errors: true  # In case swap isn't enabled
+      tags: swap
+
+    - name: Adjust SELinux to permissive mode
+      ansible.builtin.command:
+        cmd: setenforce 0
+      tags: selinux
+
+    - name: Update SELinux configuration to permissive mode
+      ansible.builtin.lineinfile:
+        path: /etc/sysconfig/selinux
+        regexp: '^SELINUX='
+        line: "SELINUX=permissive"
+      tags: selinux
+
+    - name: Open necessary firewall ports for Kubernetes (Control Plane)
+      ansible.builtin.firewalld:
+        permanent: true
+        service: "{{ item }}"
+        state: enabled
+      loop:
+        - 6443/tcp
+        - 2379-2380/tcp
+        - 10250-10252/tcp
+        - 10257-10259/tcp
+        - 179/tcp
+        - 4789/udp
+      when: inventory_hostname == "k8s-master01"
+
+    - name: Open necessary firewall ports for Kubernetes (Worker Nodes)
+      ansible.builtin.firewalld:
+        permanent: true
+        service: "{{ item }}"
+        state: enabled
+      loop:
+        - 179/tcp
+        - 10250/tcp
+        - 30000-32767/tcp
+        - 4789/udp
+      when: inventory_hostname != "k8s-master01"
+
+    - name: Load necessary kernel modules for Kubernetes
+      ansible.builtin.shell:
+        cmd: |
+          echo -e "overlay\nbr_netfilter" | tee /etc/modules-load.d/containerd.conf
+          modprobe overlay
+          modprobe br_netfilter
+      tags: kernel-modules
+
+    - name: Add necessary sysctl parameters for Kubernetes networking
+      ansible.builtin.sysctl:
+        name: "{{ item }}"
+        value: "1"
+        state: present
+        reload: yes
+      loop:
+        - net.bridge.bridge-nf-call-iptables
+        - net.ipv4.ip_forward
+        - net.bridge.bridge-nf-call-ip6tables
+      tags: sysctl
+
+    - name: Install Docker repository (for containerd)
+      ansible.builtin.shell:
+        cmd: dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+      tags: containerd-repo
+
+    - name: Install containerd
+      ansible.builtin.dnf:
+        name: containerd.io
+        state: present
+      tags: containerd
+
+    - name: Configure containerd to use systemd as cgroup driver
+      ansible.builtin.lineinfile:
+        path: /etc/containerd/config.toml
+        regexp: '^SystemdCgroup'
+        line: "SystemdCgroup = true"
+      notify:
+        - restart containerd
+      tags: containerd-config
+
+    - name: Restart containerd service
+      ansible.builtin.systemd:
+        name: containerd
+        state: restarted
+        enabled: true
+      tags: containerd
+
+    - name: Install Kubernetes repository
+      ansible.builtin.copy:
+        dest: /etc/yum.repos.d/kubernetes.repo
+        content: |
+          [kubernetes]
+          name=Kubernetes
+          baseurl=https://pkgs.k8s.io/core:/stable:/v1.28/rpm/
+          enabled=1
+          gpgcheck=1
+          gpgkey=https://pkgs.k8s.io/core:/stable:/v1.28/rpm/repodata/repomd.xml.key
+          exclude=kubelet kubeadm kubectl cri-tools kubernetes-cni
+      tags: kubernetes-repo
+
+    - name: Install Kubernetes tools (kubelet, kubeadm, kubectl)
+      ansible.builtin.dnf:
+        name: kubelet,kubeadm,kubectl
+        state: present
+        disable_gpg_check: yes
+      tags: kubernetes-tools
+
+    - name: Enable kubelet service
+      ansible.builtin.systemd:
+        name: kubelet
+        state: started
+        enabled: true
+      tags: kubelet
+
+    - name: Initialize Kubernetes master node
+      ansible.builtin.shell:
+        cmd: kubeadm init --control-plane-endpoint=k8s-master01
+      when: inventory_hostname == "k8s-master01"
+      register: kubeadm_init_output
+      tags: kubeadm-init
+
+    - name: Copy Kubeadm config file to user's home directory
+      ansible.builtin.copy:
+        src: /etc/kubernetes/admin.conf
+        dest: "{{ ansible_env.HOME }}/.kube/config"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0644'
+      when: inventory_hostname == "k8s-master01"
+      tags: kube-config
+
+    - name: Join Kubernetes worker node to the cluster
+      ansible.builtin.shell:
+        cmd: "kubeadm join k8s-master01:6443 --token {{ kubeadm_init_output.stdout_lines[0] }} --discovery-token-ca-cert-hash {{ kubeadm_init_output.stdout_lines[1] }}"
+      when: inventory_hostname != "k8s-master01"
+      tags: kubeadm-join
+
+  handlers:
+    - name: restart containerd
+      ansible.builtin.systemd:
+        name: containerd
+        state: restarted
