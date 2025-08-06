@@ -316,8 +316,8 @@
     - name: Initialize Kubernetes master node
       ansible.builtin.shell:
         cmd: kubeadm init --control-plane-endpoint=k8s-master01
-      when: inventory_hostname == "k8s-master01"
-      register: kubeadm_init_output and not kubeadm_already_initialized.stat.exists
+      when: inventory_hostname == "k8s-master01" and not kubeadm_already_initialized.stat.exists
+      register: kubeadm_init_output 
       tags: kubeadm-init
 
     - name: Copy Kubeadm config file to user's home directory
