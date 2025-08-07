@@ -23,6 +23,7 @@
         state: latest
         disablerepo:
         - kubernetes
+        - crio-o
         
     - name: Install pip if not present
       ansible.builtin.dnf:
@@ -124,6 +125,7 @@
         state: present
         disablerepo:
         - kubernetes
+        - crio-o
         
     - name: Ensure EPEL repo is enabled
       ansible.builtin.command: dnf config-manager --enable epel
