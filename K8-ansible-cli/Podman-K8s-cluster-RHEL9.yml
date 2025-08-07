@@ -25,15 +25,15 @@
       ansible.builtin.dnf:
         name: "{{ item }}"
         state: present
+        disablerepo:
+        - kubernetes
       become: true
-      disablerepo:
-      - kubernetes
       loop:
         - python3
         - python3-pip
         - python3-firewall
         - firewalld
-
+ 
     - name: Import EPEL GPG key for RHEL 9
       ansible.builtin.rpm_key:
         state: present
@@ -55,7 +55,7 @@
         name: podman
         state: present
         disablerepo:
-          - kubernetes
+        - kubernetes
         
     - name: Disable SELinux required for Kubernetes components
       ansible.builtin.selinux:
