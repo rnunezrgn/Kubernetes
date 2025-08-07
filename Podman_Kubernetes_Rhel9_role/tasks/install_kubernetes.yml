@@ -1,0 +1,63 @@
+# podman_kubernetes/tasks/install_kubernetes.yml
+---
+- name: Disable SELinux
+  ansible.builtin.selinux:
+    state: disabled
+
+- name: Add Kubernetes YUM repository
+  ansible.builtin.yum_repository:
+    name: kubernetes
+    description: Kubernetes Repository
+    baseurl: "{{ kubernetes_repo_url }}"
+    gpgkey: "{{ kubernetes_gpg_key }}"
+    enabled: 1
+    gpgcheck: 1
+
+- name: Install Kubernetes components
+  ansible.builtin.dnf:
+    name:
+      - kubeadm
+      - kubelet
+      - kubectl
+    state: present
+
+- name: Enable and start kubelet
+  ansible.builtin.systemd:
+    name: kubelet
+    enabled: true
+    state: started
+
+- name: Disable swap (required for Kubernetes)
+  ansible.builtin.command:
+    cmd: swapoff -a
+  ignore_errors: true
+
+- name: Remove swap entry from fstab
+  ansible.builtin.lineinfile:
+    path: /etc/fstab
+    regexp: '^.*swap.*'
+    state: absent
+
+- name: Check if Kubernetes master has been initialized
+  ansible.builtin.stat:
+    path: /etc/kubernetes/admin.conf
+  register: master_initialized
+
+- name: Initialize kubeadm on master node (if not already initialized)
+  ansible.builtin.command:
+    cmd: kubeadm init --pod-network-cidr={{ kubernetes_pod_network_cidr }}
+  when: not master_initialized.stat.exists
+
+- name: Set up kubeconfig for the master user (only if kubeadm init was successful)
+  ansible.builtin.copy:
+    content: "{{ kubeadm_init.stdout_lines | join('\n') }}"
+    dest: /home/{{ ansible_user }}/.kube/config
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0600'
+  when: not master_initialized.stat.exists
+
+- name: Install Flannel CNI plugin (only if kubeadm init was successful)
+  ansible.builtin.command:
+    cmd: kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+  when: not master_initialized.stat.exists
