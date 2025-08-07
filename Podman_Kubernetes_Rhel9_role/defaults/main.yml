@@ -1,0 +1,5 @@
+# podman_kubernetes/defaults/main.yml
+podman_container_name: nginx-container
+podman_image: nginx
+podman_port: 8080
+kubernetes_pod_network_cidr: 10.244.0.0/16
