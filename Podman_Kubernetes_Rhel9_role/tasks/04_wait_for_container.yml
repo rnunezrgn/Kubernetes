@@ -1,0 +1,10 @@
+# podman_kubernetes/tasks/04_wait_for_container.yml
+---
+- name: Wait for Podman container to be accessible via curl
+  ansible.builtin.wait_for:
+    host: "{{ ansible_host }}"
+    port: "{{ podman_port }}"
+    delay: 10
+    timeout: 30
+    state: started
+    msg: "Nginx container is not accessible"
