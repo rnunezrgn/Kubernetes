@@ -37,18 +37,18 @@
         - python3-firewall
         - firewalld
  
-    - name: Add CRI-O YUM repository for RHEL 9
+    - name: Add Docker CE repository (provides containerd.io)
       ansible.builtin.yum_repository:
-        name: cri-o
-        description: CRI-O repo for containerd and CRI tools
-        baseurl: "{{ crio_repo_baseurl }}"
+        name: docker-ce
+        description: Docker CE Stable - provides containerd.io
+        baseurl: https://download.docker.com/linux/centos/docker-ce.repo
         enabled: yes
         gpgcheck: yes
-        gpgkey: "{{ crio_gpg_key }}"
-
+        gpgkey: https://download.docker.com/linux/centos/gpg
+        
     - name: Install containerd from CRI-O repo
       ansible.builtin.dnf:
-        name: containerd
+        name: containerd.io
         state: present
 
     - name: Create containerd config directory
