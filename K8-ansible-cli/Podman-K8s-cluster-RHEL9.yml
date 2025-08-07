@@ -173,10 +173,16 @@
         
     - name: Pre-pull nginx image with full registry path
       ansible.builtin.command: podman pull docker.io/library/nginx
-    
-    - name: Run nginx container
-      ansible.builtin.command: podman run -d --name nginx-container -p 8080:80 docker.io/library/nginx
-      ignore_errors: true
+
+      - name: Check if nginx container exists
+        ansible.builtin.command: podman container exists nginx-container
+        register: nginx_exists
+        ignore_errors: true
+      
+      - name: Run nginx container if not exists
+        ansible.builtin.command: >
+          podman run -d --name nginx-container -p 8080:80 docker.io/library/nginx
+        when: nginx_exists.rc != 0
 
     - name: Ensure Podman container is running
       ansible.builtin.command:
