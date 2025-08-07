@@ -30,10 +30,10 @@
       ansible.builtin.dnf:
         name: "{{ item }}"
         state: present
-        enablerepo:
-          - appstream
-          - baseos
-          - extras
+        disablerepo:
+        - kubernetes
+        - crio-o
+        
       become: true
       loop:
         - python3
