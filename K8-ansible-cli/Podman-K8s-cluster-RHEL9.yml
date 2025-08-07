@@ -29,7 +29,6 @@
         - python3-pip
         - python3-firewall
         - firewalld
-        - cri-tools
         
     - name: Install EPEL repository required for Podman
       ansible.builtin.dnf:
