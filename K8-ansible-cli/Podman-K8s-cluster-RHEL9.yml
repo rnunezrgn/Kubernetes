@@ -6,11 +6,16 @@
     myusername: ""
     mypassword: ""
     mystatus: "present"
-    crio_version: "1.29"
-    crio_repo_baseurl: "https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/${crio_version}:/rh9/$basearch/"
-    crio_gpg_key: "https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/${crio_version}:/rh9/$basearch/repodata/repomd.xml.key"
+#    crio_version: "1.29"
+#    crio_repo_baseurl: "https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/${crio_version}:/rh9/$basearch/"
+#    crio_gpg_key: "https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/${crio_version}:/rh9/$basearch/repodata/repomd.xml.key"
   
   tasks:
+    - name: Remove crip-io repo file
+      ansible.builtin.file:
+        path: /etc/yum.repos.d/cri-o.repo
+        state: absent
+        
     - name: Register and subscribe the system
       community.general.redhat_subscription:
         username: "{{ myusername }}"
