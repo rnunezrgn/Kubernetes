@@ -61,20 +61,15 @@
       ansible.builtin.selinux:
         state: disabled
 
-    - name: Add Kubernetes YUM repository
+    - name: Add Kubernetes YUM repository (v1.33)
       ansible.builtin.yum_repository:
         name: kubernetes
-        description: Kubernetes YUM repo
-        baseurl: https://packages.cloud.google.com/yum/repos/kubernetes-el9-x86_64
+        description: Kubernetes v1.33 repo
+        baseurl: https://pkgs.k8s.io/core:/stable:/v1.33/rpm/
         enabled: yes
         gpgcheck: yes
         repo_gpgcheck: yes
-        gpgkey:
-          - https://packages.cloud.google.com/yum/doc/yum-key.gpg
-          - https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
-    
-    - name: Clean all YUM cache
-      ansible.builtin.command: dnf clean all
+        gpgkey: https://pkgs.k8s.io/core:/stable:/v1.33/rpm/repodata/repomd.xml.key
 
     - name: Install Kubernetes components
       ansible.builtin.dnf:
