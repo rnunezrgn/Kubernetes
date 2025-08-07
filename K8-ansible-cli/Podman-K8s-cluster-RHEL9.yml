@@ -41,7 +41,7 @@
         state: present
     
     - name: Ensure EPEL repo is enabled (optional but recommended)
-      ansible.builtin.command: dnf config-manager --enable epel
+      ansible.builtin.shell: dnf config-manager --enable epel
       args:
         warn: false
       when: ansible_distribution == "RedHat" and ansible_distribution_major_version == "9"
