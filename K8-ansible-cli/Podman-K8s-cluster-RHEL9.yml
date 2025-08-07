@@ -30,10 +30,16 @@
         - python3-firewall
         - firewalld
         
-    - name: Install EPEL repository required for Podman
+    - name: Install EPEL release on RHEL 9 repo required for Podman
       ansible.builtin.dnf:
-        name: epel-release
+        name: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm"
         state: present
+    
+    - name: Ensure EPEL repo is enabled (optional but recommended)
+      ansible.builtin.command: dnf config-manager --enable epel
+      args:
+        warn: false
+      when: ansible_distribution == "RedHat" and ansible_distribution_major_version == "9"
 
     - name: Install Podman
       ansible.builtin.dnf:
