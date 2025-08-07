@@ -1,0 +1,6 @@
+# podman_kubernetes/vars/main.yml
+kubernetes_repo_url: https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+kubernetes_gpg_key: https://packages.cloud.google.com/yum/doc/yum-key.gpg
+kubernetes_token: "<your_kube_token>"
+kubernetes_token_hash: "<your_token_hash>"
+master_ip: "<master_ip>"
