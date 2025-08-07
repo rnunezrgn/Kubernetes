@@ -17,7 +17,7 @@
         password: "{{ mypassword }}"
         state: "{{ mystatus }}"
         
-    - name: Upgrading all RHEL packages to Latest
+    - name: Upgrading all RHEL packages to Latest !!!
       ansible.builtin.dnf:
         name: '*'
         state: latest
