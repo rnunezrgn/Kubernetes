@@ -1,0 +1,11 @@
+# podman_kubernetes/tasks/install_podman.yml
+---
+- name: Install EPEL repository
+  ansible.builtin.dnf:
+    name: epel-release
+    state: present
+
+- name: Install Podman
+  ansible.builtin.dnf:
+    name: podman
+    state: present
