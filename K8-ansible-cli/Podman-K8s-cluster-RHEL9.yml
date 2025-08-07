@@ -21,16 +21,19 @@
       ansible.builtin.dnf:
         name: '*'
         state: latest
-        disablerepo:
-        - kubernetes
-        - crio-o
+        enablerepo:
+          - appstream
+          - baseos
+          - extras
         
     - name: Install pip if not present
       ansible.builtin.dnf:
         name: "{{ item }}"
         state: present
-        disablerepo:
-        - kubernetes
+        enablerepo:
+          - appstream
+          - baseos
+          - extras
       become: true
       loop:
         - python3
