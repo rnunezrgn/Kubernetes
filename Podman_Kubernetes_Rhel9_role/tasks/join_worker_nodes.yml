@@ -1,0 +1,17 @@
+# podman_kubernetes/tasks/join_worker_nodes.yml
+---
+- name: Get list of nodes in the cluster
+  ansible.builtin.command:
+    cmd: kubectl get nodes -o=jsonpath='{.items[*].metadata.name}'
+  register: existing_nodes
+  ignore_errors: true
+
+- name: Check if worker node is already part of the cluster
+  ansible.builtin.set_fact:
+    worker_already_joined: "{{ ansible_hostname in existing_nodes.stdout.split(' ') }}"
+  when: existing_nodes.stdout is defined
+
+- name: Join worker node to Kubernetes cluster (if not already joined)
+  ansible.builtin.command:
+    cmd: kubeadm join {{ master_ip }}:6443 --token {{ kubernetes_token }} --discovery-token-ca-cert-hash sha256:{{ kubernetes_token_hash }}
+  when: not worker_already_joined
