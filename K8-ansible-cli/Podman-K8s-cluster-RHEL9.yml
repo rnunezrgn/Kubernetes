@@ -95,10 +95,12 @@
         path: /etc/fstab
         regexp: '^.*swap.*'
         state: absent
-
-    - name: Run a podman container - Nginx container using Podman
-      ansible.builtin.command:
-        cmd: podman run -d --name nginx-container -p 8080:80 nginx
+        
+    - name: Pre-pull nginx image with full registry path
+      ansible.builtin.command: podman pull docker.io/library/nginx
+    
+    - name: Run nginx container
+      ansible.builtin.command: podman run -d --name nginx-container -p 8080:80 docker.io/library/nginx
       ignore_errors: true
 
     - name: Ensure Podman container is running
