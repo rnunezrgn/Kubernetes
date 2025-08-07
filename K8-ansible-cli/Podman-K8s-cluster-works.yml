@@ -4,6 +4,29 @@
   become: true
   
   tasks:
+    - name: Register and subscribe the system
+      community.general.redhat_subscription:
+        username: "{{ myusername }}"
+        password: "{{ mypassword }}"
+        state: "{{ mystatus }}"
+        
+    - name: Upgrading all RHEL packages to Latest
+      ansible.builtin.dnf:
+        name: '*'
+        state: latest
+        
+    - name: Install pip if not present
+      ansible.builtin.dnf:
+        name: "{{ item }}"
+        state: present
+      become: true
+      loop:
+        - python3
+        - python3-pip
+        - python3-firewall
+        - firewalld
+        - cri-tools
+        
     - name: Install EPEL repository required for Podman
       ansible.builtin.dnf:
         name: epel-release
