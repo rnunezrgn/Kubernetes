@@ -29,7 +29,12 @@
         - python3-pip
         - python3-firewall
         - firewalld
-        
+
+    - name: Import EPEL GPG key for RHEL 9
+      ansible.builtin.rpm_key:
+        state: present
+        key: https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-9
+    
     - name: Install EPEL release on RHEL 9 repo required for Podman
       ansible.builtin.dnf:
         name: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm"
