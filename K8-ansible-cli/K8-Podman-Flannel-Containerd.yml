@@ -1,6 +1,6 @@
 ---
 - name: Kubernetes Cluster Setup with containerd and Flannel (RHEL 9)
-  hosts: all
+  hosts: rhel9k8s
   become: true
   vars:
     pod_network_cidr: "10.216.0.0/16"
@@ -88,7 +88,7 @@
         state: stopped
 
 - name: Initialize Kubernetes Master Node
-  hosts: master
+  hosts: k8smasters
   become: true
   vars:
     pod_network_cidr: "10.216.0.0/16"
@@ -130,10 +130,10 @@
         src: /root/kubeadm_join.sh
       register: join_command_script
       when: k8s_initialized.stat.exists or kubeadm_output.changed
-      delegate_to: "{{ groups['master'][0] }}"
+      delegate_to: k8smasters
 
 - name: Join Worker Nodes to the Cluster
-  hosts: workers
+  hosts: k8sworkers
   become: true
   vars:
     join_command: "{{ join_command_script.content | b64decode | trim }}"
