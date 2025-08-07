@@ -66,14 +66,42 @@
       ansible.builtin.debug:
         msg: "Nginx Podman container running: {{ podman_status.stdout }}"
 
+    - name: Wait for Podman container to be accessible via curl to check if the container is accessible
+      ansible.builtin.wait_for:
+        host: "{{ ansible_host }}"
+        port: 8080
+        delay: 10
+        timeout: 30
+        state: started
+        msg: "Nginx container is not accessible"
+
+    - name: Verify Nginx container is serving content (curl)
+      ansible.builtin.command:
+        cmd: curl -s http://localhost:8080
+      register: curl_response
+      retries: 5
+      delay: 10
+      until: curl_response.stdout == "Welcome to nginx!"
+      ignore_errors: true
+
+    - name: Debug curl response
+      ansible.builtin.debug:
+        msg: "Curl Response: {{ curl_response.stdout }}"
+
 - name: Initialize Kubernetes master node
   hosts: k8smaster
   become: true
   tasks:
+    - name: Check if Kubernetes master has been initialized
+      ansible.builtin.stat:
+        path: /etc/kubernetes/admin.conf
+      register: master_initialized
+      
     - name: Initialize kubeadm on master node
       ansible.builtin.command:
         cmd: kubeadm init --pod-network-cidr=10.244.0.0/16
       register: kubeadm_init
+      when: not master_initialized.stat.exists
       ignore_errors: true
 
     - name: Set up kubeconfig for the master user
@@ -83,19 +111,32 @@
         owner: "{{ ansible_user }}"
         group: "{{ ansible_user }}"
         mode: '0600'
+      when: not master_initialized.stat.exists
 
     - name: Install Flannel CNI plugin
       ansible.builtin.command:
         cmd: kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+      when: not master_initialized.stat.exists
 
 - name: Join worker node to Kubernetes cluster
   hosts: k8sworkers
   become: true
   tasks:
+    - name: Get list of nodes in the cluster
+      ansible.builtin.command:
+        cmd: kubectl get nodes -o=jsonpath='{.items[*].metadata.name}'
+      register: existing_nodes
+      ignore_errors: true
+    
+    - name: Check if worker node is already part of the cluster
+      ansible.builtin.set_fact:
+        worker_already_joined: "{{ ansible_hostname in existing_nodes.stdout.split(' ') }}"
+      when: existing_nodes.stdout is defined
+      
     - name: Join worker node to Kubernetes cluster
       ansible.builtin.command:
         cmd: kubeadm join <master_ip>:6443 --token <token> --discovery-token-ca-cert-hash sha256:<hash>
-      when: ansible_hostname != 'master'
+      when: not worker_already_joined and ansible_hostname != 'master'
 
 - name: Verify Kubernetes cluster status
   hosts: k8smaster
