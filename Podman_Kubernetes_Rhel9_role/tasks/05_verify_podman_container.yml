@@ -1,0 +1,14 @@
+# podman_kubernetes/tasks/05_verify_podman_container.yml
+---
+- name: Verify Nginx container is serving content (curl)
+  ansible.builtin.command:
+    cmd: curl -s http://localhost:{{ podman_port }}
+  register: curl_response
+  retries: 5
+  delay: 10
+  until: curl_response.stdout == "Welcome to nginx!"
+  ignore_errors: true
+
+- name: Debug curl response
+  ansible.builtin.debug:
+    msg: "Curl Response: {{ curl_response.stdout }}"
