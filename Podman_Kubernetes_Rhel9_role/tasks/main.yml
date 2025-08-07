@@ -1,0 +1,7 @@
+# podman_kubernetes/tasks/main.yml
+---
+- include_tasks: install_podman.yml
+- include_tasks: install_kubernetes.yml
+- include_tasks: run_podman_container.yml
+- include_tasks: wait_for_container.yml
+- include_tasks: verify_podman_container.yml
