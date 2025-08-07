@@ -75,9 +75,6 @@
     
     - name: Clean all YUM cache
       ansible.builtin.command: dnf clean all
-    
-    - name: Make DNF cache
-      ansible.builtin.command: dnf makecache
 
     - name: Install Kubernetes components
       ansible.builtin.dnf:
