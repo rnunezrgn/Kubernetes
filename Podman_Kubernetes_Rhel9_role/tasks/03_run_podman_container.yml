@@ -1,0 +1,6 @@
+# podman_kubernetes/tasks/03_run_podman_container.yml
+---
+- name: Run Nginx container using Podman
+  ansible.builtin.command:
+    cmd: podman run -d --name "{{ podman_container_name }}" -p "{{ podman_port }}:80" "{{ podman_image }}"
+  ignore_errors: true
