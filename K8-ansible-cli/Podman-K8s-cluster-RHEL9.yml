@@ -1,7 +1,11 @@
 ---
 - name: Setup Podman and Kubernetes on RHEL 9
-  hosts: rhel-k8s
+  hosts: rhel9k8s
   become: true
+  vars:
+    myusername: ""
+    mypassword: ""
+    mystatus: "present"
   
   tasks:
     - name: Register and subscribe the system
@@ -112,7 +116,7 @@
         msg: "Curl Response: {{ curl_response.stdout }}"
 
 - name: Initialize Kubernetes master node
-  hosts: k8s-master
+  hosts: k8smasters
   become: true
   tasks:
     - name: Check if Kubernetes master has been initialized
@@ -142,7 +146,7 @@
       when: not master_initialized.stat.exists
 
 - name: Join worker node to Kubernetes cluster
-  hosts: k8s-workers
+  hosts: k8sworkers
   become: true
   tasks:
     - name: Get list of nodes in the cluster
@@ -159,10 +163,10 @@
     - name: Join worker node to Kubernetes cluster
       ansible.builtin.command:
         cmd: kubeadm join <master_ip>:6443 --token <token> --discovery-token-ca-cert-hash sha256:<hash>
-      when: not worker_already_joined and ansible_hostname != 'master'
+      when: not worker_already_joined and ansible_hostname != 'k8s-master01'
 
 - name: Verify Kubernetes cluster status
-  hosts: k8s-master
+  hosts: k8smasters
   become: true
   tasks:
     - name: Check Kubernetes node status
