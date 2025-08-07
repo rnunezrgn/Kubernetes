@@ -46,11 +46,6 @@
         gpgcheck: yes
         gpgkey: "{{ crio_gpg_key }}"
 
-    - name: Clean and refresh DNF cache
-      ansible.builtin.command: dnf clean all && dnf makecache
-      args:
-        warn: false
-
     - name: Install containerd from CRI-O repo
       ansible.builtin.dnf:
         name: containerd
