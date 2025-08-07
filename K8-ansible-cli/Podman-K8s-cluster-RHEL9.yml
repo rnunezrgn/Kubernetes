@@ -18,6 +18,8 @@
       ansible.builtin.dnf:
         name: '*'
         state: latest
+        disablerepo:
+        - kubernetes
         
     - name: Install pip if not present
       ansible.builtin.dnf:
