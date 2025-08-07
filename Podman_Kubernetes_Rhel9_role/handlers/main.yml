@@ -1,0 +1,3 @@
+# podman_kubernetes/handlers/main.yml
+---
+# Define any handlers here (e.g., restart podman service)
