@@ -6,6 +6,9 @@
     myusername: ""
     mypassword: ""
     mystatus: "present"
+    crio_version: "1.33"
+    crio_repo_baseurl: "https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/${crio_version}:/rh9/$basearch/"
+    crio_gpg_key: "https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/${crio_version}:/rh9/$basearch/repodata/repomd.xml.key"
   
   tasks:
     - name: Register and subscribe the system
@@ -33,9 +36,26 @@
         - python3-pip
         - python3-firewall
         - firewalld
-        - containerd
-        - curl
  
+    - name: Add CRI-O YUM repository for RHEL 9
+      ansible.builtin.yum_repository:
+        name: cri-o
+        description: CRI-O repo for containerd and CRI tools
+        baseurl: "{{ crio_repo_baseurl }}"
+        enabled: yes
+        gpgcheck: yes
+        gpgkey: "{{ crio_gpg_key }}"
+
+    - name: Clean and refresh DNF cache
+      ansible.builtin.command: dnf clean all && dnf makecache
+      args:
+        warn: false
+
+    - name: Install containerd from CRI-O repo
+      ansible.builtin.dnf:
+        name: containerd
+        state: present
+
     - name: Create containerd config directory
       ansible.builtin.file:
         path: /etc/containerd
@@ -46,12 +66,6 @@
       ansible.builtin.command: containerd config default
       register: containerd_config
       changed_when: false
-
-    - name: Save containerd config to file
-      ansible.builtin.copy:
-        dest: /etc/containerd/config.toml
-        content: "{{ containerd_config.stdout }}"
-        mode: '0644'
 
     - name: Overwrite containerd config.toml and Set SystemdCgroup = true
       ansible.builtin.copy:
@@ -97,15 +111,10 @@
         group: root
         mode: '0644'
 
-    - name: Enable and start containerd service
+    - name: Enable and start containerd to apply config
       ansible.builtin.systemd:
         name: containerd
         enabled: true
-        state: started
-
-    - name: Reload containerd to apply config
-      ansible.builtin.systemd:
-        name: containerd
         state: restarted
         daemon_reload: true
         
