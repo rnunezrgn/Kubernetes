@@ -1,0 +1,6 @@
+---
+- name: Setup Podman and Kubernetes on RHEL 9
+  hosts: rhel_servers
+  become: true
+  roles:
+    - podman_kubernetes
