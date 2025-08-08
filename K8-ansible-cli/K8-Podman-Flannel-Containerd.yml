@@ -164,12 +164,6 @@
       ansible.builtin.debug:
         msg: "The my_set_variable value is : {{ my_set_variable }}"
         
-    - name: Saving the change request number for later 
-      ansible.builtin.set_stats:
-        data:
-          my_content: "{{ my_set_variable }}"
-        per_host: no
-        
     - name: Print the my_content value
       ansible.builtin.debug:
         var: my_content
