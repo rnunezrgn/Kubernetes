@@ -146,15 +146,28 @@
       when: k8s_initialized.stat.exists or kubeadm_output.changed
       delegate_to: k8s-master01
 
+    - name: Print the join_command_script register
+      ansible.builtin.debug:
+        msg: "The join_command_script value is : {{ join_command_script }}"
+
     - name: Set the join_command_script variable to pass it to the next play
       set_fact:
         my_set_variable: join_command_script
+        
+    - name: Saving the change request number for later 
+      ansible.builtin.set_stats:
+        data:
+          my_content: "{{ join_command_script.content }}"
+
+    - name: Print the my_content value
+      ansible.builtin.debug:
+        msg: "The my_content value is : {{ my_content }}"
 
 - name: Join Worker Nodes to the Cluster
   hosts: k8sworkers
   become: true
   vars:
-    join_command: "{{ my_set_variable.content | b64decode | trim }}"
+    join_command: "{{ my_content | b64decode | trim }}"
     #join_command: "{{ join_command_script.content | b64decode | trim }}"
   tasks:
     - name: Join node to cluster
