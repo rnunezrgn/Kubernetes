@@ -164,20 +164,37 @@
       ansible.builtin.debug:
         msg: "The my_set_variable value is : {{ my_set_variable }}"
         
-    - name: Print the my_content value
-      ansible.builtin.debug:
-        var: my_content
-  #      msg: "The my_content value is : {{ my_content }}"
+    - name: Ensure /etc/kubernetes exists on all workers
+      ansible.builtin.file:
+        path: /etc/kubernetes
+        state: directory
+        mode: '0755'
+      delegate_to: "{{ item }}"
+      loop: "{{ groups['k8sworkers'] }}"
+
+    - name: Copy the variable to /etc/kubernetes/kubelet.conf on each worker
+      ansible.builtin.copy:
+        content: "{{ my_set_variable }}"
+        dest: /etc/kubernetes/kubelet.conf
+        owner: root
+        group: root
+        mode: '0644'
+      delegate_to: "{{ item }}"
+      loop: "{{ groups['k8sworkers'] }}"
 
 - name: Join Worker Nodes to the Cluster
   hosts: k8sworkers
+  gather_facts: false
   become: true
   #vars:
     #join_command: "{{ my_set_variable }}"
     #join_command: "{{ join_command_script.content | b64decode | trim }}"
   tasks:
-    - name: Join node to cluster
+    - name: Join node to cluster pointing to kubelet.conf file straight
+      ansible.builtin.shell: /etc/kubernetes/kubelet.conf
+        
+   # - name: Join node to cluster
    #   ansible.builtin.shell: "{{ join_command }}"
-      ansible.builtin.shell: "{{ my_set_variable }}"
-      args:
-        creates: /etc/kubernetes/kubelet.conf
+   #   ansible.builtin.shell: "{{ my_set_variable }}"
+   #   args:
+   #     creates: /etc/kubernetes/kubelet.conf
