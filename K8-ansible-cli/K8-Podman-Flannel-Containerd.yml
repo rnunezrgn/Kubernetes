@@ -7,6 +7,20 @@
     is_master: "{{ inventory_hostname == groups['master'][0] }}"
 
   tasks:
+    - name: Enable BaseOS repository
+      ansible.builtin.command: >
+        subscription-manager repos --enable=rhel-9-for-x86_64-baseos-rpms
+      register: enable_baseos
+      changed_when: "'is enabled for this system' in enable_baseos.stdout"
+      failed_when: enable_baseos.rc != 0 and 'is enabled for this system' not in enable_baseos.stdout
+
+    - name: Enable AppStream repository
+      ansible.builtin.command: >
+        subscription-manager repos --enable=rhel-9-for-x86_64-appstream-rpms
+      register: enable_appstream
+      changed_when: "'is enabled for this system' in enable_appstream.stdout"
+      failed_when: enable_appstream.rc != 0 and 'is enabled for this system' not in enable_appstream.stdout
+
     - name: Enable container-tools module
       ansible.builtin.command: dnf module enable -y container-tools:latest
       changed_when: true
