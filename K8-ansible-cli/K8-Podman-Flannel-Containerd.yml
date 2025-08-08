@@ -190,6 +190,10 @@
     #join_command: "{{ my_set_variable }}"
     #join_command: "{{ join_command_script.content | b64decode | trim }}"
   tasks:
+    - name: Reset kubeadm if kubelet.conf exists
+      command: kubeadm reset -f
+      when: ansible_facts['files']['/etc/kubernetes/kubelet.conf'] is defined
+
     - name: Join node to cluster pointing to kubelet.conf file straight
       ansible.builtin.shell: /etc/kubernetes/kubelet.conf
         
