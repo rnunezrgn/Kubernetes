@@ -170,8 +170,9 @@
           my_content: "{{ my_set_variable }}"
         per_host: no
         
-  #  - name: Print the my_content value
-  #    ansible.builtin.debug:
+    - name: Print the my_content value
+      ansible.builtin.debug:
+        var: my_content
   #      msg: "The my_content value is : {{ my_content }}"
 
 - name: Join Worker Nodes to the Cluster
