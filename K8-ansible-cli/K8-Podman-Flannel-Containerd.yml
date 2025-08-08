@@ -146,11 +146,16 @@
       when: k8s_initialized.stat.exists or kubeadm_output.changed
       delegate_to: k8s-master01
 
+    - name: Set the join_command_script variable to pass it to the next play
+      set_fact:
+        my_set_variable: join_command_script
+
 - name: Join Worker Nodes to the Cluster
   hosts: k8sworkers
   become: true
   vars:
-    join_command: "{{ join_command_script.content | b64decode | trim }}"
+    join_command: "{{ my_set_variable.content | b64decode | trim }}"
+    #join_command: "{{ join_command_script.content | b64decode | trim }}"
   tasks:
     - name: Join node to cluster
       ansible.builtin.shell: "{{ join_command }}"
