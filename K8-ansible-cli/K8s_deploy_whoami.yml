@@ -1,0 +1,37 @@
+---
+- name: Deploy and test whoami application
+  hosts: kube_control_plane
+  become: yes
+  vars:
+    whoami_port: 31000
+
+  tasks:
+    - name: Copy whoami manifest to control plane
+      copy:
+        src: files/whoami.yaml
+        dest: /tmp/whoami.yaml
+
+    - name: Apply whoami manifest
+      command: kubectl apply -f /tmp/whoami.yaml
+
+    - name: Wait for whoami pod to be ready
+      shell: |
+        kubectl get pods -l app=whoami -o jsonpath='{.items[0].status.containerStatuses[0].ready}'
+      register: pod_ready
+      retries: 10
+      delay: 5
+      until: pod_ready.stdout == "true"
+
+    - name: Get internal node IP
+      shell: kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}'
+      register: node_ip
+
+    - name: Test access to whoami service
+      uri:
+        url: "http://{{ node_ip.stdout }}:{{ whoami_port }}"
+        return_content: yes
+      register: whoami_response
+
+    - name: Show whoami response
+      debug:
+        var: whoami_response.content
