@@ -12,6 +12,26 @@
         username: "{{ myusername }}"
         password: "{{ mypassword }}"
         state: "{{ mystatus }}"
+
+    - name: Ensure IP forwarding is set in sysctl config
+      ansible.builtin.copy:
+        dest: /etc/sysctl.d/99-kubernetes-ip-forward.conf
+        content: |
+          net.ipv4.ip_forward = 1
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Apply sysctl settings from all files
+      ansible.builtin.command: sysctl --system
+
+    - name: Verify that IP forwarding is enabled
+      ansible.builtin.command: cat /proc/sys/net/ipv4/ip_forward
+      register: ip_forward_status
+
+    - name: Debug output of IP forwarding status
+      ansible.builtin.debug:
+        msg: "ip_forward value is {{ ip_forward_status.stdout }}"
         
     - name: Enable BaseOS repository
       ansible.builtin.command: >
