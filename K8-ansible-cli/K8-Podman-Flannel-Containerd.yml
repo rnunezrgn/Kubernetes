@@ -158,7 +158,7 @@
       ansible.builtin.set_stats:
         data:
           my_content: "{{ join_command_script.content | b64decode | trim }}"
-        per_host: no
+        per_host: false
         
     - name: Print the my_set_variable value
       ansible.builtin.debug:
@@ -178,11 +178,12 @@
 - name: Join Worker Nodes to the Cluster
   hosts: k8sworkers
   become: true
-  vars:
-    join_command: "{{ my_set_variable }}"
+  #vars:
+    #join_command: "{{ my_set_variable }}"
     #join_command: "{{ join_command_script.content | b64decode | trim }}"
   tasks:
     - name: Join node to cluster
-      ansible.builtin.shell: "{{ join_command }}"
+   #   ansible.builtin.shell: "{{ join_command }}"
+      ansible.builtin.shell: "{{ my_set_variable }}"
       args:
         creates: /etc/kubernetes/kubelet.conf
