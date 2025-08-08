@@ -7,6 +7,12 @@
     is_master: "{{ inventory_hostname == groups['master'][0] }}"
 
   tasks:
+    - name: Register and subscribe the system
+      community.general.redhat_subscription:
+        username: "{{ myusername }}"
+        password: "{{ mypassword }}"
+        state: "{{ mystatus }}"
+        
     - name: Enable BaseOS repository
       ansible.builtin.command: >
         subscription-manager repos --enable=rhel-9-for-x86_64-baseos-rpms
