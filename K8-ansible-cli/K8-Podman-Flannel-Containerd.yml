@@ -144,7 +144,7 @@
         src: /root/kubeadm_join.sh
       register: join_command_script
       when: k8s_initialized.stat.exists or kubeadm_output.changed
-      delegate_to: k8smasters
+      delegate_to: k8s-master01
 
 - name: Join Worker Nodes to the Cluster
   hosts: k8sworkers
