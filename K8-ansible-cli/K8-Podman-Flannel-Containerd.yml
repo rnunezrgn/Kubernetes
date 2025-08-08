@@ -178,7 +178,7 @@
         dest: /etc/kubernetes/kubelet.conf
         owner: root
         group: root
-        mode: '0644'
+        mode: '0755'
       delegate_to: "{{ item }}"
       loop: "{{ groups['k8sworkers'] }}"
 
