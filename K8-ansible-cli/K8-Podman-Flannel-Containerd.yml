@@ -11,7 +11,7 @@
       community.general.redhat_subscription:
         username: "{{ myusername }}"
         password: "{{ mypassword }}"
-        state: "{{ mystatus }}"
+        state: "present"
 
     - name: Ensure IP forwarding is set in sysctl config
       ansible.builtin.copy:
