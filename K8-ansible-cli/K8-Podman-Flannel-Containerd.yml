@@ -170,9 +170,9 @@
           my_content: "{{ my_set_variable }}"
         per_host: no
         
-    - name: Print the my_content value
-      ansible.builtin.debug:
-        msg: "The my_content value is : {{ my_content }}"
+  #  - name: Print the my_content value
+  #    ansible.builtin.debug:
+  #      msg: "The my_content value is : {{ my_content }}"
 
 - name: Join Worker Nodes to the Cluster
   hosts: k8sworkers
