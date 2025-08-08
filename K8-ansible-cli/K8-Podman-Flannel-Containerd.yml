@@ -152,13 +152,18 @@
 
     - name: Set the join_command_script variable to pass it to the next play
       set_fact:
-        my_set_variable: join_command_script
+        my_set_variable: "{{ join_command_script.content | b64decode | trim }}"
         
     - name: Saving the change request number for later 
       ansible.builtin.set_stats:
         data:
-          my_content: "{{ join_command_script.content }}"
-
+          my_content: "{{ join_command_script.content | b64decode | trim }}"
+        per_host: no
+        
+    - name: Print the my_set_variable value
+      ansible.builtin.debug:
+        msg: "The my_content value is : {{ my_set_variable }}"
+        
     - name: Print the my_content value
       ansible.builtin.debug:
         msg: "The my_content value is : {{ my_content }}"
