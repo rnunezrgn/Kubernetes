@@ -152,12 +152,12 @@
 
     - name: Set the join_command_script variable to pass it to the next play
       set_fact:
-        my_set_variable: "{{ join_command_script.content | b64decode | trim }} --ignore-preflight-errors=Hostname"
+        my_set_variable: "{{ join_command_script.content | b64decode | trim }} --ignore-preflight-errors=FileAvailable--etc-kubernetes-kubelet.conf --ignore-preflight-errors=Hostname"
         
     - name: Saving the change request number for later 
       ansible.builtin.set_stats:
         data:
-          my_content: "{{ join_command_script.content | b64decode | trim }} --ignore-preflight-errors=Hostname"
+          my_content: "{{ join_command_script.content | b64decode | trim }} --ignore-preflight-errors=FileAvailable--etc-kubernetes-kubelet.conf --ignore-preflight-errors=Hostname"
         per_host: false
         
     - name: Print the my_set_variable value
