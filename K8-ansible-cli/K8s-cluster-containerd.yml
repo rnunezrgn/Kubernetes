@@ -94,7 +94,12 @@
         sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
         systemctl restart containerd
         systemctl enable containerd
-
+        
+    - name: Unmask kubelet service
+      ansible.builtin.systemd:
+        name: kubelet
+        masked: no
+        
     - name: Enable kubelet
       ansible.builtin.systemd:
         name: kubelet
