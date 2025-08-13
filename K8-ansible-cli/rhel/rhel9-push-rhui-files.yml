@@ -53,7 +53,7 @@
 
     - name: Copy redhat-rhui.repo from the control machine to hosts missing it
       ansible.builtin.copy:
-        src: "./files/{{ groups['rhui-enabled'][0] }}/etc/yum.repos.d/redhat-rhui.repo"
+        src: "./files/k8s-worker01/etc/yum.repos.d/redhat-rhui.repo"
         dest: /etc/yum.repos.d/redhat-rhui.repo
         owner: root
         group: root
@@ -62,7 +62,7 @@
 
     - name: Copy redhat-rhui-beta.repo.disabled from the control machine to hosts missing it
       ansible.builtin.copy:
-        src: "./files/{{ groups['rhui-enabled'][0] }}/etc/yum.repos.d/redhat-rhui-beta.repo.disabled"
+        src: "./files/k8s-worker01/etc/yum.repos.d/redhat-rhui-beta.repo.disabled"
         dest: /etc/yum.repos.d/redhat-rhui-beta.repo.disabled
         owner: root
         group: root
@@ -71,7 +71,7 @@
 
     - name: Copy redhat-rhui-client-config.repo from the control machine to hosts missing it
       ansible.builtin.copy:
-        src: "./files/{{ groups['rhui-enabled'][0] }}/etc/yum.repos.d/redhat-rhui-client-config.repo"
+        src: "./files/k8s-worker01/etc/yum.repos.d/redhat-rhui-client-config.repo"
         dest: /etc/yum.repos.d/redhat-rhui-client-config.repo
         owner: root
         group: root
