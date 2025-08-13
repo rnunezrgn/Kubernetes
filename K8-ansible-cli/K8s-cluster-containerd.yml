@@ -64,9 +64,9 @@
       ansible.builtin.dnf:
         name: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm"
         state: present
-   #     disablerepo:
-   #     - kubernetes
-   #     - crio-o
+        disablerepo:
+        - kubernetes
+        - crio-o
 
     - name: Install Kubernetes tools
       ansible.builtin.dnf:
@@ -82,13 +82,14 @@
         state: present
 
     - name: Add Docker CE repository (provides containerd.io)
-      ansible.builtin.yum_repository:
-        name: docker-ce
-        description: Docker CE Stable - provides containerd.io
-        baseurl: https://download.docker.com/linux/rhel/docker-ce.repo
-        enabled: yes
-        gpgcheck: yes
-        gpgkey: https://download.docker.com/linux/rhel/gpg
+      ansible.builtin.shell: dnf config-manager --add-repo=https://download.docker.com/linux/rhel/docker-ce.repo
+    #  yum_repository:
+    #    name: docker-ce
+    #    description: Docker CE Stable - provides containerd.io
+    #    baseurl: https://download.docker.com/linux/rhel/docker-ce.repo
+    #    enabled: yes
+    #    gpgcheck: yes
+    #    gpgkey: https://download.docker.com/linux/rhel/gpg
 
     - name: Install containerd and Kubernetes tools
       ansible.builtin.dnf:
