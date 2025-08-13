@@ -49,7 +49,7 @@
           - buildah
           - lsof
           - skopeo
-          - epel-release
+         # - epel-release
         state: present
 
     - name: Configure containerd
@@ -65,7 +65,6 @@
         name: kubelet
         enabled: yes
         state: started
-
 
 - name: Initialize Kubernetes Control Plane
   hosts: k8smasters
@@ -135,7 +134,6 @@
     - name: Set join command fact
       set_fact:
         join_command: "{{ join_cmd.stdout }}"
-
 
 - name: Join Worker Nodes to the Cluster
   hosts: k8sworkers
