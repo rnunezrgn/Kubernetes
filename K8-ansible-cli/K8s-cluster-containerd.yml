@@ -207,6 +207,7 @@
         rm -rf /etc/cni/
         systemctl daemon-reexec
         systemctl restart containerd
+        systemctl enable --now kubelet
       ignore_errors: yes
     
     - name: Join node to cluster
