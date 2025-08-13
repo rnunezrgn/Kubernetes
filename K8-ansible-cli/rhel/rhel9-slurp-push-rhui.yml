@@ -1,0 +1,66 @@
+---
+- name: Copy RHUI repo files to hosts missing them
+  hosts: rhel9k8s
+  become: true
+  gather_facts: false
+
+  tasks:    
+    - name: Slurp redhat-rhui.repo from k8s-worker01
+      ansible.builtin.slurp:
+        src: /etc/yum.repos.d/redhat-rhui.repo
+      register: rhui_repo_slurp
+      delegate_to: k8s-worker01
+      run_once: true
+    
+    - name: Copy redhat-rhui.repo to all hosts
+      ansible.builtin.copy:
+        content: "{{ rhui_repo_slurp.content | b64decode }}"
+        dest: /etc/yum.repos.d/redhat-rhui.repo
+        owner: root
+        group: root
+        mode: '0644'    
+
+    - name: Slurp redhat-rhui-beta.repo.disabled from k8s-worker01
+      ansible.builtin.slurp:
+        src: /etc/yum.repos.d/redhat-rhui-beta.repo.disabled
+      register: rhui_repo_beta_slurp
+      delegate_to: k8s-worker01
+      run_once: true
+    
+    - name: Copy redhat-rhui-beta.repo to all hosts
+      ansible.builtin.copy:
+        content: "{{ rhui_repo_beta_slurp.content | b64decode }}"
+        dest: /etc/yum.repos.d/redhat-rhui-beta.repo.disabled
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Slurp redhat-rhui-config.repo.disabled from k8s-worker01
+      ansible.builtin.slurp:
+        src: /etc/yum.repos.d/redhat-rhui-client-config.repo
+      register: rhui_repo_config_slurp
+      delegate_to: k8s-worker01
+      run_once: true
+    
+    - name: Copy redhat-rhui-config.repo to all hosts
+      ansible.builtin.copy:
+        content: "{{ rhui_repo_config_slurp.content | b64decode }}"
+        dest: /etc/yum.repos.d/redhat-rhui-config.repo.disabled
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Slurp redhat-rhui-client.repo.disabled from k8s-worker01
+      ansible.builtin.slurp:
+        src: /etc/yum.repos.d/redhat-rhui-client-config.repo
+      register: rhui_repo_client_slurp
+      delegate_to: k8s-worker01
+      run_once: true
+    
+    - name: Copy redhat-rhui-client.repo to all hosts
+      ansible.builtin.copy:
+        content: "{{ rhui_repo_client_slurp.content | b64decode }}"
+        dest: /etc/yum.repos.d/redhat-rhui-client-config.repo
+        owner: root
+        group: root
+        mode: '0644'
