@@ -41,39 +41,32 @@
         flat: no
       when: rhui_client_config_repo_stat.stat.exists
       
-    - name: Check if redhat-rhui-beta.repo.disabled exists #### ------ NOW COPY -----
-      ansible.builtin.stat:
-        path: /etc/yum.repos.d/redhat-rhui-beta.repo.disabled
-      register: rhui_beta_repo_stat
-
-    - name: Check if redhat-rhui-client-config.repo exists
-      ansible.builtin.stat:
-        path: /etc/yum.repos.d/redhat-rhui-client-config.repo
-      register: rhui_client_config_repo_stat
-
-    - name: Copy redhat-rhui.repo from the control machine to hosts missing it
+    - name: Check if redhat-rhui-beta.repo.disabled exists #### ------ NOW COPY from k8s-worker01 to host missing it-----
       ansible.builtin.copy:
-        src: "./files/k8s-worker01/etc/yum.repos.d/redhat-rhui.repo"
+        src: "/etc/yum.repos.d/redhat-rhui.repo"
         dest: /etc/yum.repos.d/redhat-rhui.repo
         owner: root
         group: root
         mode: '0644'
       when: not rhui_repo_stat.stat.exists
+      delegate_to: k8s-worker01
 
-    - name: Copy redhat-rhui-beta.repo.disabled from the control machine to hosts missing it
+    - name: Copy redhat-rhui-beta.repo.disabled from k8s-worker01 to hosts missing it
       ansible.builtin.copy:
-        src: "./files/k8s-worker01/etc/yum.repos.d/redhat-rhui-beta.repo.disabled"
+        src: "/etc/yum.repos.d/redhat-rhui-beta.repo.disabled"
         dest: /etc/yum.repos.d/redhat-rhui-beta.repo.disabled
         owner: root
         group: root
         mode: '0644'
       when: not rhui_beta_repo_stat.stat.exists
+      delegate_to: k8s-worker01
 
-    - name: Copy redhat-rhui-client-config.repo from the control machine to hosts missing it
+    - name: Copy redhat-rhui-client-config.repo from k8s-worker01 to hosts missing it
       ansible.builtin.copy:
-        src: "./files/k8s-worker01/etc/yum.repos.d/redhat-rhui-client-config.repo"
+        src: "/etc/yum.repos.d/redhat-rhui-client-config.repo"
         dest: /etc/yum.repos.d/redhat-rhui-client-config.repo
         owner: root
         group: root
         mode: '0644'
       when: not rhui_client_config_repo_stat.stat.exists
+      delegate_to: k8s-worker01
