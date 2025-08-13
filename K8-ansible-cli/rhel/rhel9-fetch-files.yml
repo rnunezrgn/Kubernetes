@@ -1,6 +1,6 @@
 ---
 - name: Fetch RHUI repo files from RHUI-enabled servers
-  hosts: all
+  hosts: rhel9k8s
   become: true
   gather_facts: false
 
