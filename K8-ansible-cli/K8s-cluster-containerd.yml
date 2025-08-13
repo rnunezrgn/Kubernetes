@@ -6,23 +6,19 @@
     pod_network_cidr: "10.216.0.0/16"
 
   tasks:
+    # RHEL Registration & Repos
     - name: Register RHEL subscription
       community.general.redhat_subscription:
         username: "{{ myusername }}"
         password: "{{ mypassword }}"
         auto_attach: true
         state: present
-      register: register_output
-#      failed_when: "'Invalid credentials' in register_output.stderr"
-#      changed_when: "'The system has been registered' in register_output.stdout"
 
     - name: Enable required RHEL repos
       ansible.builtin.shell: |
         subscription-manager repos --enable=rhel-9-for-x86_64-baseos-rpms \
                                    --enable=rhel-9-for-x86_64-appstream-rpms \
                                    --enable codeready-builder-for-rhel-9-x86_64-rpms
-      register: enable_repo_output
-#      changed_when: "'is enabled for this system' in enable_repo_output.stdout"     
 
     - name: Ensure redhat.repo file is present
       ansible.builtin.stat:
@@ -34,6 +30,7 @@
         msg: "redhat.repo file is missing. Repositories may not be enabled correctly."
       when: not redhat_rhui_repo.stat.exists
 
+    # System Configuration
     - name: Disable SELinux
       ansible.posix.selinux:
         state: disabled
@@ -43,7 +40,18 @@
         swapoff -a
         sed -i.bak '/ swap /s/^/#/' /etc/fstab
 
-    - name: Configure sysctl
+    - name: Load br_netfilter module immediately
+      ansible.builtin.modprobe:
+        name: br_netfilter
+        state: present
+
+    - name: Ensure br_netfilter loads on boot
+      ansible.builtin.copy:
+        dest: /etc/modules-load.d/br_netfilter.conf
+        content: "br_netfilter\n"
+        mode: '0644'
+
+    - name: Configure sysctl for Kubernetes networking
       ansible.builtin.copy:
         dest: /etc/sysctl.d/k8s.conf
         content: |
@@ -55,12 +63,13 @@
     - name: Apply sysctl settings
       command: sysctl --system
 
-    - name: Import EPEL GPG key for RHEL 9
+    # Install Required Packages
+    - name: Import EPEL GPG key
       ansible.builtin.rpm_key:
         state: present
         key: https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-9
-    
-    - name: Install EPEL release on RHEL 9 repo required for Podman
+
+    - name: Install EPEL release
       ansible.builtin.dnf:
         name: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm"
         state: present
@@ -83,17 +92,10 @@
 
     - name: Add Docker CE repository (provides containerd.io)
       ansible.builtin.shell: dnf config-manager --add-repo=https://download.docker.com/linux/rhel/docker-ce.repo
-    #  yum_repository:
-    #    name: docker-ce
-    #    description: Docker CE Stable - provides containerd.io
-    #    baseurl: https://download.docker.com/linux/rhel/docker-ce.repo
-    #    enabled: yes
-    #    gpgcheck: yes
-    #    gpgkey: https://download.docker.com/linux/rhel/gpg
 
-    - name: Install containerd and Kubernetes tools
+    - name: Install containerd
       ansible.builtin.dnf:
-        name: containerd
+        name: containerd.io
         state: present
           
     - name: Configure containerd
@@ -104,17 +106,14 @@
         systemctl restart containerd
         systemctl enable containerd
         
-    - name: Unmask kubelet service
+    - name: Unmask and enable kubelet
       ansible.builtin.systemd:
         name: kubelet
         masked: no
-        
-    - name: Enable kubelet
-      ansible.builtin.systemd:
-        name: kubelet
         enabled: yes
         state: started
 
+# --- Control Plane Initialization ---
 - name: Initialize Kubernetes Control Plane
   hosts: k8smasters
   become: true
@@ -163,27 +162,23 @@
       retries: 10
       delay: 10
 
-    - name: Extract ClusterConfiguration from kubeadm-config ConfigMap
-      shell: |
-        kubectl get configmap kubeadm-config -n kube-system -o jsonpath='{.data.ClusterConfiguration}' > /etc/kubernetes/kubeadm-config.yaml
-      when: k8s_initialized.stat.exists or kubeadm_output.changed
-
     - name: Upload certificate key (for control-plane join if needed)
       shell: kubeadm init phase upload-certs --upload-certs
       register: cert_key_output
-      when: k8s_initialized.stat.exists or kubeadm_output.changed
+      when: not k8s_initialized.stat.exists
       changed_when: false
 
     - name: Generate kubeadm join command with cert key
       shell: |
         kubeadm token create --print-join-command --certificate-key {{ cert_key_output.stdout_lines[-1] }}
       register: join_cmd
-      when: k8s_initialized.stat.exists or kubeadm_output.changed
+      when: not k8s_initialized.stat.exists
 
     - name: Set join command fact
       set_fact:
         join_command: "{{ join_cmd.stdout }}"
 
+# --- Worker Node Join ---
 - name: Join Worker Nodes to the Cluster
   hosts: k8sworkers
   become: true
@@ -191,14 +186,37 @@
     join_command: "{{ hostvars[groups['k8smasters'][0]].join_command }}"
 
   tasks:
-    - name: Stop and mask kubelet to free port 10250
-      systemd:
+    - name: Load br_netfilter module immediately
+      ansible.builtin.modprobe:
+        name: br_netfilter
+        state: present
+
+    - name: Ensure br_netfilter loads on boot
+      ansible.builtin.copy:
+        dest: /etc/modules-load.d/br_netfilter.conf
+        content: "br_netfilter\n"
+        mode: '0644'
+
+    - name: Configure sysctl for Kubernetes networking
+      ansible.builtin.copy:
+        dest: /etc/sysctl.d/k8s.conf
+        content: |
+          net.bridge.bridge-nf-call-ip6tables = 1
+          net.bridge.bridge-nf-call-iptables = 1
+          net.ipv4.ip_forward = 1
+        mode: '0644'
+
+    - name: Apply sysctl settings
+      command: sysctl --system
+
+    - name: Ensure kubelet is enabled and started
+      ansible.builtin.systemd:
         name: kubelet
-        state: stopped
-        enabled: no
-        masked: yes
-    
-    - name: Reset previous kubeadm state and free up port 10250
+        enabled: yes
+        state: started
+        masked: no
+
+    - name: Reset previous kubeadm state
       shell: |
         kubeadm reset -f
         rm -rf /etc/kubernetes/
