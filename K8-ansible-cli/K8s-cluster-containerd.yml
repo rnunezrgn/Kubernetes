@@ -214,13 +214,20 @@
     - name: Apply sysctl settings
       command: sysctl --system
 
-    - name: Ensure kubelet is enabled and started
+#    - name: Ensure kubelet is enabled and started
+#      ansible.builtin.systemd:
+#        name: kubelet
+#        enabled: yes
+#        state: started
+#        masked: no
+
+    - name: Stop and mask kubelet to free port 10250
       ansible.builtin.systemd:
         name: kubelet
-        enabled: yes
-        state: started
-        masked: no
-
+        state: stopped
+        enabled: no
+        masked: yes
+        
     - name: Reset previous kubeadm state
       shell: |
         kubeadm reset -f
