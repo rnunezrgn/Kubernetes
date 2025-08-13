@@ -1,6 +1,6 @@
 ---
 - name: Copy RHUI repo files to hosts missing them
-  hosts: all
+  hosts: rhel9k8s
   become: true
   gather_facts: false
 
