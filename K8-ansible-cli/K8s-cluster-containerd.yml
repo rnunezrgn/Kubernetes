@@ -25,13 +25,13 @@
 
     - name: Ensure redhat.repo file is present
       ansible.builtin.stat:
-        path: redhat-rhui.repo
+        path: /etc/yum.repos.d/redhat-rhui.repo
       register: redhat_rhui_repo
 
     - name: Fail if redhat.repo does not exist
       ansible.builtin.fail:
         msg: "redhat.repo file is missing. Repositories may not be enabled correctly."
-      when: not redhat_repo.stat.exists
+      when: not redhat_rhui_repo.stat.exists
 
     - name: Disable SELinux
       ansible.posix.selinux:
