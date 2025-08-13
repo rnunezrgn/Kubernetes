@@ -10,12 +10,28 @@
       community.general.redhat_subscription:
         username: "{{ myusername }}"
         password: "{{ mypassword }}"
+        auto_attach: true
         state: present
+      register: register_output
+      failed_when: "'Invalid credentials' in register_output.stderr"
+      changed_when: "'The system has been registered' in register_output.stdout"
 
     - name: Enable required RHEL repos
       ansible.builtin.shell: |
         subscription-manager repos --enable=rhel-9-for-x86_64-baseos-rpms \
                                    --enable=rhel-9-for-x86_64-appstream-rpms
+      register: enable_repo_output
+      changed_when: "'is enabled for this system' in enable_repo_output.stdout"     
+
+    - name: Ensure redhat.repo file is present
+      ansible.builtin.stat:
+        path: /etc/yum.repos.d/redhat.repo
+      register: redhat_repo
+
+    - name: Fail if redhat.repo does not exist
+      ansible.builtin.fail:
+        msg: "redhat.repo file is missing. Repositories may not be enabled correctly."
+      when: not redhat_repo.stat.exists
 
     - name: Disable SELinux
       ansible.posix.selinux:
