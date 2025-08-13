@@ -34,6 +34,15 @@
         msg: "redhat.repo file is missing. Repositories may not be enabled correctly."
       when: not redhat_rhui_repo.stat.exists
 
+    - name: Add Docker CE repository (provides containerd.io)
+      ansible.builtin.yum_repository:
+        name: docker-ce
+        description: Docker CE Stable - provides containerd.io
+        baseurl: https://download.docker.com/linux/rhel/docker-ce.repo
+        enabled: yes
+        gpgcheck: yes
+        gpgkey: https://download.docker.com/linux/rhel/gpg
+
     - name: Disable SELinux
       ansible.posix.selinux:
         state: disabled
