@@ -60,6 +60,19 @@
         name: lsof
         state: present
 
+    - name: Import EPEL GPG key for RHEL 9
+      ansible.builtin.rpm_key:
+        state: present
+        key: https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-9
+    
+    - name: Install EPEL release on RHEL 9 repo required for Podman
+      ansible.builtin.dnf:
+        name: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm"
+        state: present
+   #     disablerepo:
+   #     - kubernetes
+   #     - crio-o
+
     - name: Install containerd and Kubernetes tools
       ansible.builtin.dnf:
         name:
@@ -69,10 +82,10 @@
           - kubectl
           - podman
           - buildah
-          - lsof
           - skopeo
           - epel-release
         state: present
+
 
     - name: Configure containerd
       ansible.builtin.shell: |
