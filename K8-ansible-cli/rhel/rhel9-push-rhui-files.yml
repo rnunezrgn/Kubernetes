@@ -50,7 +50,7 @@
         mode: '0644'
         remote_src: yes
       when: not rhui_repo_stat.stat.exists
-      delegate_to: k8s-worker02
+      delegate_to: k8s-worker01
 
     - name: Copy redhat-rhui-beta.repo.disabled from k8s-worker01 to hosts missing it
       ansible.builtin.copy:
@@ -61,7 +61,7 @@
         mode: '0644'
         remote_src: yes
       when: not rhui_beta_repo_stat.stat.exists
-      delegate_to: k8s-worker02
+      delegate_to: k8s-worker01
 
     - name: Copy redhat-rhui-client-config.repo from k8s-worker01 to hosts missing it
       ansible.builtin.copy:
@@ -72,4 +72,4 @@
         mode: '0644'
         remote_src: yes
       when: not rhui_client_config_repo_stat.stat.exists
-      delegate_to: k8s-worker02
+      delegate_to: k8s-worker01
