@@ -48,6 +48,7 @@
         owner: root
         group: root
         mode: '0644'
+        remote_src: yes
       when: not rhui_repo_stat.stat.exists
       delegate_to: k8s-worker01
 
@@ -58,6 +59,7 @@
         owner: root
         group: root
         mode: '0644'
+        remote_src: yes
       when: not rhui_beta_repo_stat.stat.exists
       delegate_to: k8s-worker01
 
@@ -68,5 +70,6 @@
         owner: root
         group: root
         mode: '0644'
+        remote_src: yes
       when: not rhui_client_config_repo_stat.stat.exists
       delegate_to: k8s-worker01
