@@ -103,9 +103,33 @@
         kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
       when: not k8s_initialized.stat.exists
 
-    - name: Generate kubeadm join command
-      shell: kubeadm token create --print-join-command
+    - name: Wait for Kubernetes API to become available
+      uri:
+        url: https://localhost:6443/healthz
+        method: GET
+        status_code: 200
+        validate_certs: false
+      register: result
+      until: result.status == 200
+      retries: 10
+      delay: 10
+
+    - name: Extract ClusterConfiguration from kubeadm-config ConfigMap
+      shell: |
+        kubectl get configmap kubeadm-config -n kube-system -o jsonpath='{.data.ClusterConfiguration}' > /etc/kubernetes/kubeadm-config.yaml
+      when: k8s_initialized.stat.exists or kubeadm_output.changed
+
+    - name: Upload certificate key (for control-plane join if needed)
+      shell: kubeadm init phase upload-certs --upload-certs
+      register: cert_key_output
+      when: k8s_initialized.stat.exists or kubeadm_output.changed
+      changed_when: false
+
+    - name: Generate kubeadm join command with cert key
+      shell: |
+        kubeadm token create --print-join-command --certificate-key {{ cert_key_output.stdout_lines[-1] }}
       register: join_cmd
+      when: k8s_initialized.stat.exists or kubeadm_output.changed
 
     - name: Set join command fact
       set_fact:
@@ -120,6 +144,6 @@
 
   tasks:
     - name: Join node to cluster
-      shell: "{{ join_command }} --ignore-preflight-errors=all"
+      shell: "{{ join_command }}"
       args:
         executable: /bin/bash
