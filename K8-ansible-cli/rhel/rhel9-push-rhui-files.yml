@@ -10,7 +10,7 @@
         path: /etc/yum.repos.d/redhat-rhui.repo
       register: rhui_repo_stat
       
-    - name: Check if redhat-rhui-beta.repo.disabled file exists ###### FETCH FIRST ######
+    - name: Check if redhat-rhui-beta.repo.disabled file exists
       ansible.builtin.stat:
         path: /etc/yum.repos.d/redhat-rhui-beta.repo.disabled
       register: rhui_beta_repo_stat
@@ -23,21 +23,21 @@
     - name: Fetch redhat-rhui.repo file
       ansible.builtin.fetch:
         src: /etc/yum.repos.d/redhat-rhui.repo
-        dest: "files/{{ inventory_hostname }}/etc/yum.repos.d/"
+        dest: "./files/{{ inventory_hostname }}/etc/yum.repos.d/"
         flat: no
       when: rhui_repo_stat.stat.exists
 
     - name: Fetch redhat-rhui-beta.repo.disabled file
       ansible.builtin.fetch:
         src: /etc/yum.repos.d/redhat-rhui-beta.repo.disabled
-        dest: "files/{{ inventory_hostname }}/etc/yum.repos.d/"
+        dest: "./files/{{ inventory_hostname }}/etc/yum.repos.d/"
         flat: no
       when: rhui_beta_repo_stat.stat.exists
 
     - name: Fetch redhat-rhui-client-config.repo file
       ansible.builtin.fetch:
         src: /etc/yum.repos.d/redhat-rhui-client-config.repo
-        dest: "files/{{ inventory_hostname }}/etc/yum.repos.d/"
+        dest: "./files/{{ inventory_hostname }}/etc/yum.repos.d/"
         flat: no
       when: rhui_client_config_repo_stat.stat.exists
       
@@ -51,27 +51,27 @@
         path: /etc/yum.repos.d/redhat-rhui-client-config.repo
       register: rhui_client_config_repo_stat
 
-    - name: Copy redhat-rhui.repo from server1 to hosts missing it
+    - name: Copy redhat-rhui.repo from the control machine to hosts missing it
       ansible.builtin.copy:
-        src: "files/server1/etc/yum.repos.d/redhat-rhui.repo"
+        src: "./files/{{ groups['rhui-enabled'][0] }}/etc/yum.repos.d/redhat-rhui.repo"
         dest: /etc/yum.repos.d/redhat-rhui.repo
         owner: root
         group: root
         mode: '0644'
       when: not rhui_repo_stat.stat.exists
 
-    - name: Copy redhat-rhui-beta.repo.disabled from server1 to hosts missing it
+    - name: Copy redhat-rhui-beta.repo.disabled from the control machine to hosts missing it
       ansible.builtin.copy:
-        src: "files/server1/etc/yum.repos.d/redhat-rhui-beta.repo.disabled"
+        src: "./files/{{ groups['rhui-enabled'][0] }}/etc/yum.repos.d/redhat-rhui-beta.repo.disabled"
         dest: /etc/yum.repos.d/redhat-rhui-beta.repo.disabled
         owner: root
         group: root
         mode: '0644'
       when: not rhui_beta_repo_stat.stat.exists
 
-    - name: Copy redhat-rhui-client-config.repo from server1 to hosts missing it
+    - name: Copy redhat-rhui-client-config.repo from the control machine to hosts missing it
       ansible.builtin.copy:
-        src: "files/server1/etc/yum.repos.d/redhat-rhui-client-config.repo"
+        src: "./files/{{ groups['rhui-enabled'][0] }}/etc/yum.repos.d/redhat-rhui-client-config.repo"
         dest: /etc/yum.repos.d/redhat-rhui-client-config.repo
         owner: root
         group: root
