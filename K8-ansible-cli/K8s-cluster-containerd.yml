@@ -34,15 +34,6 @@
         msg: "redhat.repo file is missing. Repositories may not be enabled correctly."
       when: not redhat_rhui_repo.stat.exists
 
-    - name: Add Docker CE repository (provides containerd.io)
-      ansible.builtin.yum_repository:
-        name: docker-ce
-        description: Docker CE Stable - provides containerd.io
-        baseurl: https://download.docker.com/linux/rhel/docker-ce.repo
-        enabled: yes
-        gpgcheck: yes
-        gpgkey: https://download.docker.com/linux/rhel/gpg
-
     - name: Disable SELinux
       ansible.posix.selinux:
         state: disabled
@@ -63,11 +54,6 @@
 
     - name: Apply sysctl settings
       command: sysctl --system
-      
-    - name: Install LSOF tools
-      ansible.builtin.dnf:
-        name: lsof
-        state: present
 
     - name: Import EPEL GPG key for RHEL 9
       ansible.builtin.rpm_key:
@@ -82,10 +68,10 @@
    #     - kubernetes
    #     - crio-o
 
-    - name: Install containerd and Kubernetes tools
+    - name: Install Kubernetes tools
       ansible.builtin.dnf:
         name:
-          - containerd
+          - lsof 
           - kubelet
           - kubeadm
           - kubectl
@@ -95,7 +81,20 @@
           - epel-release
         state: present
 
+    - name: Add Docker CE repository (provides containerd.io)
+      ansible.builtin.yum_repository:
+        name: docker-ce
+        description: Docker CE Stable - provides containerd.io
+        baseurl: https://download.docker.com/linux/rhel/docker-ce.repo
+        enabled: yes
+        gpgcheck: yes
+        gpgkey: https://download.docker.com/linux/rhel/gpg
 
+    - name: Install containerd and Kubernetes tools
+      ansible.builtin.dnf:
+        name: containerd
+        state: present
+          
     - name: Configure containerd
       ansible.builtin.shell: |
         mkdir -p /etc/containerd
