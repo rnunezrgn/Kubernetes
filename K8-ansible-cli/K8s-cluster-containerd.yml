@@ -37,6 +37,11 @@
 
     - name: Apply sysctl settings
       command: sysctl --system
+      
+    - name: Install LSOF tools
+      ansible.builtin.dnf:
+        name: lsof
+        state: present
 
     - name: Install containerd and Kubernetes tools
       ansible.builtin.dnf:
@@ -49,7 +54,7 @@
           - buildah
           - lsof
           - skopeo
-         # - epel-release
+          - epel-release
         state: present
 
     - name: Configure containerd
