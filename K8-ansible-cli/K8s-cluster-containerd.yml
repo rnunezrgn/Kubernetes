@@ -47,6 +47,7 @@
           - kubectl
           - podman
           - buildah
+          - lsof
           - skopeo
           - epel-release
         state: present
@@ -143,7 +144,34 @@
     join_command: "{{ hostvars[groups['k8smasters'][0]].join_command }}"
 
   tasks:
+    - name: Stop and mask kubelet to free port 10250
+      systemd:
+        name: kubelet
+        state: stopped
+        enabled: no
+        masked: yes
+    
+    - name: Reset previous kubeadm state and free up port 10250
+      shell: |
+        kubeadm reset -f
+        rm -rf /etc/kubernetes/
+        rm -rf /var/lib/kubelet/*
+        rm -rf /var/lib/cni/
+        rm -rf /etc/cni/
+        systemctl daemon-reexec
+        systemctl restart containerd
+      ignore_errors: yes
+    
     - name: Join node to cluster
-      shell: "{{ join_command }}"
+      shell: "{{ join_command }} --ignore-preflight-errors=Hostname"
       args:
         executable: /bin/bash
+      register: join_result
+      failed_when: "'[ERROR' in join_result.stderr"
+    
+    - name: Unmask and enable kubelet after join
+      systemd:
+        name: kubelet
+        state: restarted
+        enabled: yes
+        masked: no
