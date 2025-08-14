@@ -173,6 +173,40 @@
         chown ec2-user:ec2-user /home/ec2-user/.kube/config
       when: not k8s_initialized.stat.exists
 
+    # --- Update Flannel CNI Configuration ---
+    - name: Update Flannel CNI configuration with pod_network_cidr
+      ansible.builtin.copy:
+        dest: /etc/cni/net.d/10-flannel.conflist
+        content: |
+          {
+            "name": "cbr0",
+            "cniVersion": "0.3.1",
+            "plugins": [
+              {
+                "type": "flannel",
+                "delegate": {
+                  "hairpinMode": true,
+                  "isDefaultGateway": true,
+                  "ipMasq": true,
+                  "ipam": {
+                    "type": "host-local",
+                    "subnet": "{{ pod_network_cidr }}",  # Use pod_network_cidr from vars
+                    "rangeStart": "10.216.0.10",         # Starting IP for pods
+                    "rangeEnd": "10.216.255.254",       # Ending IP for pods
+                    "gateway": "10.216.0.1"             # Gateway for the network
+                  }
+                }
+              },
+              {
+                "type": "portmap",
+                "capabilities": {
+                  "portMappings": true
+                }
+              }
+            ]
+          }
+        mode: '0644'
+
     - name: Deploy Flannel CNI
       ansible.builtin.shell: |
         kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
@@ -288,4 +322,68 @@
         state: restarted
         enabled: yes
         masked: no
+
+    # --- Update Flannel CNI Configuration ---
+    - name: Update Flannel CNI configuration with pod_network_cidr
+      ansible.builtin.copy:
+        dest: /etc/cni/net.d/10-flannel.conflist
+        content: |
+          {
+            "name": "cbr0",
+            "cniVersion": "0.3.1",
+            "plugins": [
+              {
+                "type": "flannel",
+                "delegate": {
+                  "hairpinMode": true,
+                  "isDefaultGateway": true,
+                  "ipMasq": true,
+                  "ipam": {
+                    "type": "host-local",
+                    "subnet": "{{ pod_network_cidr }}",  # Use pod_network_cidr from vars
+                    "rangeStart": "10.216.0.10",         # Starting IP for pods
+                    "rangeEnd": "10.216.255.254",       # Ending IP for pods
+                    "gateway": "10.216.0.1"             # Gateway for the network
+                  }
+                }
+              },
+              {
+                "type": "portmap",
+                "capabilities": {
+                  "portMappings": true
+                }
+              }
+            ]
+          }
+        mode: '0644'
+
+    # --- Redeploy Kubernetes Pods ---
+    - name: Wait for kube-apiserver to be available
+      ansible.builtin.uri:
+        url: https://localhost:6443/healthz
+        method: GET
+        status_code: 200
+        validate_certs: false
+      register: result
+      until: result.status == 200
+      retries: 10
+      delay: 10
+
+    - name: Redeploy all pods in kube-system namespace (including Flannel)
+      ansible.builtin.shell: kubectl delete pod -l app=flannel --namespace=kube-system
+      become_user: ec2-user
+      when: result.status == 200
+
+    - name: Restart all deployments in kube-system namespace
+      ansible.builtin.shell: kubectl rollout restart deployment --all --namespace=kube-system
+      become_user: ec2-user
+      when: result.status == 200
+
+    - name: Restart all deployments in all namespaces
+      ansible.builtin.shell: |
+        for ns in $(kubectl get namespaces -o custom-columns=":metadata.name"); do
+          kubectl rollout restart deployment --all --namespace=$ns
+        done
+      become_user: ec2-user
+      when: result.status == 200
 ...
