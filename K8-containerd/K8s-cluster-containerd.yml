@@ -275,7 +275,7 @@
 
     # Wait for Flannel CNI to be deployed on the worker node
     - name: Wait for Flannel CNI to be available
-      command: "kubectl get pods -n kube-system -l app=flannel -o jsonpath='{.items[0].status.phase}'"
+      ansible.builtin.command: "kubectl get pods -n kube-system -l app=flannel -o jsonpath='{.items[0].status.phase}'"
       register: flannel_status
       until: flannel_status.stdout == "Running"
       retries: 10
