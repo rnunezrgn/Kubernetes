@@ -40,3 +40,4 @@ Let’s break down the roles of each component you've mentioned:
 🧭 Final Notes Before Choosing a Direction
     • Use containerd if you want easier, widely-supported, production-safe setup.
     • Use CRI-O + Podman if you’re in an enterprise Red Hat environment and want consistency and SELinux integrations.
+
