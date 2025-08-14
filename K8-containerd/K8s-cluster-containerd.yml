@@ -115,6 +115,11 @@
       ansible.builtin.shell: dnf config-manager --add-repo=https://download.docker.com/linux/rhel/9/x86_64/stable
       when: not my_docker_ce_repo.stat.exists
 
+    - name: Import Docker GPG key (still from 'centos' path)
+      ansible.builtin.rpm_key:
+        key: https://download.docker.com/linux/centos/gpg
+        state: present
+
     - name: Install containerd
       ansible.builtin.dnf:
         name: containerd.io
