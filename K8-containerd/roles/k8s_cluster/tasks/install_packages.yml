@@ -1,0 +1,73 @@
+---
+# Install required packages (EPEL, Kubernetes tools, containerd, etc.)
+- name: Import EPEL GPG key
+  ansible.builtin.rpm_key:
+    state: present
+    key: https://dl.fedoraproject.org/pub/epel/RPM-GPG-KEY-EPEL-9
+
+- name: Install EPEL release
+  ansible.builtin.dnf:
+    name: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm"
+    state: present
+    disablerepo:
+      - kubernetes
+      - crio-o
+
+- name: Add Kubernetes repo
+  ansible.builtin.copy:
+    dest: /etc/yum.repos.d/kubernetes.repo
+    content: |
+      [kubernetes]
+      name=Kubernetes
+      baseurl=https://pkgs.k8s.io/core:/stable:/v1.29/rpm/
+      enabled=1
+      gpgcheck=1
+      repo_gpgcheck=1
+      gpgkey=https://pkgs.k8s.io/core:/stable:/v1.29/rpm/repodata/repomd.xml.key
+
+- name: Install Kubernetes tools
+  ansible.builtin.dnf:
+    name:
+      - lsof
+      - kubelet
+      - kubeadm
+      - kubectl
+      - podman
+      - buildah
+      - skopeo
+      - epel-release
+    state: present
+
+- name: Ensure docker-ce-repo file is present
+  ansible.builtin.stat:
+    path: /etc/yum.repos.d/docker-ce.repo
+  register: my_docker_ce_repo
+
+- name: Add Docker CE repository if /etc/yum.repos.d/docker-ce.repo file does not exist
+  ansible.builtin.shell: dnf config-manager --add-repo=https://download.docker.com/linux/rhel/9/x86_64/stable
+  when: not my_docker_ce_repo.stat.exists
+
+- name: Import Docker GPG key (still from 'centos' path)
+  ansible.builtin.rpm_key:
+    key: https://download.docker.com/linux/centos/gpg
+    state: present
+
+- name: Install containerd
+  ansible.builtin.dnf:
+    name: containerd.io
+    state: present
+
+- name: Configure containerd
+  ansible.builtin.shell: |
+    mkdir -p /etc/containerd
+    containerd config default > /etc/containerd/config.toml
+    sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
+    systemctl restart containerd
+    systemctl enable containerd
+
+- name: Unmask and enable kubelet
+  ansible.builtin.systemd:
+    name: kubelet
+    masked: no
+    enabled: yes
+    state: started
