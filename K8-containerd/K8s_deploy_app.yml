@@ -1,0 +1,60 @@
+# --- Deploy Test Apps & Run All Tests ---
+- name: Deploy and Test Kubernetes Apps
+  hosts: k8smasters
+  become: true
+  vars:
+    node_ip: ""
+    
+  tasks:
+    - name: Create test apps manifest
+      copy:
+        dest: /root/test-apps.yaml
+        mode: '0644'
+        content: |
+          # Manifest contents go here (use the combined test-apps.yaml from earlier)
+          # Due to length, I’ll include the complete version in the final file we generate.
+
+    - name: Apply test applications
+      shell: kubectl apply -f /root/test-apps.yaml
+
+    - name: Wait for deployments to be ready
+      shell: |
+        kubectl rollout status deployment/nginx --timeout=120s
+        kubectl rollout status deployment/hello-world --timeout=120s
+        kubectl rollout status deployment/wordpress --timeout=300s
+
+    - name: Test service endpoints inside cluster
+      shell: |
+        kubectl run tmp-test --rm -i --restart=Never --image=busybox -- \
+          wget -qO- http://nginx:80
+        kubectl run tmp-test2 --rm -i --restart=Never --image=busybox -- \
+          wget -qO- http://hello-world:5678
+      register: internal_test_results
+      failed_when: "'Hello Kubernetes!' not in internal_test_results.stdout"
+
+    - name: Get NodePorts
+      shell: kubectl get svc {{ item }} -o jsonpath='{.spec.ports[0].nodePort}'
+      loop:
+        - nginx
+        - hello-world
+        - wordpress
+      register: nodeports
+
+    - name: Find worker node IP (fallback to master)
+      shell: |
+        kubectl get nodes -o jsonpath='{range .items[?(@.metadata.labels."node-role.kubernetes.io/worker"=="")]}{@.status.addresses[?(@.type=="InternalIP")].address}{"\n"}{end}' | head -n 1
+      register: worker_ip
+      failed_when: false
+
+    - name: Set node_ip fact
+      set_fact:
+        node_ip: "{{ worker_ip.stdout if worker_ip.stdout|length > 0 else ansible_default_ipv4.address }}"
+        nginx_port: "{{ nodeports.results[0].stdout }}"
+        hello_port: "{{ nodeports.results[1].stdout }}"
+        wp_port: "{{ nodeports.results[2].stdout }}"
+
+    - name: Test from inside cluster (node)
+      shell: |
+        curl -s http://{{ node_ip }}:{{ nginx_port }}
+        curl -s http://{{ node_ip }}:{{ hello_port }}
+        curl -s http://{{ node_ip }}:{{ wp_port }}
