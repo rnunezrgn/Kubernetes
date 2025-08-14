@@ -93,12 +93,12 @@
     - name: Ensure docker-ce-repo file is present
       ansible.builtin.stat:
         path: /etc/yum.repos.d/docker-ce.repo
-      register: my-docker-ce-repo
+      register: my_docker_ce_repo
 
     - name: Add Docker CE repository (provides containerd.io) if /etc/yum.repos.d/docker-ce.repo file does not exist
 #      ansible.builtin.shell: dnf config-manager --add-repo=https://download.docker.com/linux/rhel/docker-ce.repo
       ansible.builtin.shell: dnf config-manager --add-repo=https://download.docker.com/linux/rhel/9/x86_64/stable
-      when: not my-docker-ce-repo.stat.exists
+      when: not my_docker_ce_repo.stat.exists
 
     - name: Install containerd
       ansible.builtin.dnf:
