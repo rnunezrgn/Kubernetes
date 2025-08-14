@@ -1,6 +1,6 @@
-🧠 K8-Cluster-Containerd
+🧠 K8-Cluster-Containerd.yml playbook
 
-At the center of it all is Kubernetes, but in RHEL9 it needs a container runtime to actually run containers.
+This playbook will install a Kubernetes cluster in RHEL9, but it needs a container runtime to actually run containers.
 Let’s break down the roles of each component you've mentioned:
 
 🔹 Kubernetes
