@@ -4,6 +4,7 @@
   become: true
   vars:
     pod_network_cidr: "10.216.0.0/16"
+    cni_version: "v0.18.0"  # Flannel version
 
   tasks:
     # RHEL Registration & Repos
@@ -272,16 +273,6 @@
         executable: /bin/bash
       register: join_result
       failed_when: "'[ERROR' in join_result.stderr"
-
-    # Wait for Flannel CNI to be deployed on the worker node
-    - name: Wait for Flannel CNI to be available
-      command: "kubectl get pods -n kube-system -l app=flannel -o jsonpath='{.items[0].status.phase}'"
-      register: flannel_status
-      until: flannel_status.stdout == "Running"
-      retries: 10
-      delay: 5
-      become: true
-      become_user: root
     
     - name: Unmask and enable kubelet after join
       ansible.builtin.systemd:
