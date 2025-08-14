@@ -253,7 +253,7 @@
 #    - name: Ensure kubelet is enabled and started
 #      ansible.builtin.systemd:
 #        name: kubelet
-#        enabled: yes
+#        enabled: true
 #        state: started
 #        masked: no
 
