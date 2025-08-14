@@ -34,6 +34,10 @@
                 labels:
                   app: nginx
               spec:
+                tolerations:
+                - key: "node-role.kubernetes.io/control-plane"
+                  operator: "Exists"
+                  effect: "NoSchedule"
                 containers:
                 - name: nginx
                   image: nginx:latest
@@ -69,6 +73,10 @@
                 labels:
                   app: hello-world
               spec:
+                tolerations:
+                - key: "node-role.kubernetes.io/control-plane"
+                  operator: "Exists"
+                  effect: "NoSchedule"
                 containers:
                 - name: hello-world
                   image: hashicorp/http-echo
@@ -117,6 +125,10 @@
                 labels:
                   app: wordpress
               spec:
+                tolerations:
+                - key: "node-role.kubernetes.io/control-plane"
+                  operator: "Exists"
+                  effect: "NoSchedule"
                 containers:
                 - name: wordpress
                   image: wordpress:latest
