@@ -178,6 +178,15 @@
         kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
       when: not k8s_initialized.stat.exists
 
+    - name: Wait for Flannel pods to be running on all nodes
+      shell: |
+        kubectl get pods -n kube-system -l app=flannel --no-headers | grep -v Running && exit 1 || exit 0
+      register: flannel_ready
+      retries: 10
+      delay: 10
+      until: flannel_ready.rc == 0
+      when: not k8s_initialized.stat.exists
+
     - name: Wait for Kubernetes API to become available
       ansible.builtin.uri:
         url: https://localhost:6443/healthz
@@ -272,16 +281,6 @@
         executable: /bin/bash
       register: join_result
       failed_when: "'[ERROR' in join_result.stderr"
-
-    # Wait for Flannel CNI to be deployed on the worker node
-    - name: Wait for Flannel CNI to be available
-      ansible.builtin.command: "kubectl get pods -n kube-system -l app=flannel -o jsonpath='{.items[0].status.phase}'"
-      register: flannel_status
-      until: flannel_status.stdout == "Running"
-      retries: 10
-      delay: 5
-      become: true
-      become_user: root
     
     - name: Unmask and enable kubelet after join
       ansible.builtin.systemd:
