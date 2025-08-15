@@ -254,8 +254,7 @@
    #   when: not k8s_initialized.stat.exists
 
     - name: Wait for Flannel pods to be running on all nodes
-      shell: |
-        kubectl get pods -n kube-system -l app=flannel --no-headers | grep -v Running && exit 1 || exit 0
+      ansible.builtin.shell: kubectl get pods -n kube-system -l app=flannel --no-headers | grep -v Running && exit 1 || exit 0
       register: flannel_ready
       retries: 10
       delay: 10
@@ -268,14 +267,14 @@
         method: GET
         status_code: 200
         validate_certs: false
-      register: my_kubernetes_API_result
+      register: result
       until: result.status == 200
       retries: 10
       delay: 10
 
-    - name: Debuging my_kubernetes_API_result
+    - name: Debuging API result variable
       ansible.builtin.debug:
-        msg: "This is the Kubernetes API status: {{ my_kubernetes_API_result }}" 
+        msg: "This is the Kubernetes API status: {{ result }}" 
 
     - name: Upload certificate key (for control-plane join if needed)
       ansible.builtin.shell: kubeadm init phase upload-certs --upload-certs
