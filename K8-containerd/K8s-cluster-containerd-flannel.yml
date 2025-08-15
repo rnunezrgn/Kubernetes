@@ -15,6 +15,21 @@
         auto_attach: true
         state: present
 
+    - name: Add the br_netfilter module
+      community.general.modprobe:
+        name: br_netfilter
+        state: present
+
+    - name: Add the ip_vs module
+      community.general.modprobe:
+        name: ip_vs
+        state: present
+
+    - name: Add the overlay module
+      community.general.modprobe:
+        name: overlay
+        state: present
+
     - name: Enable required RHEL repos
       ansible.builtin.shell: |
         subscription-manager repos --enable=rhel-9-for-x86_64-baseos-rpms \
