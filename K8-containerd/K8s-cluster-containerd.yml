@@ -151,7 +151,7 @@
         sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
         systemctl daemon-reload
         systemctl restart containerd
-        systemctl enable --now containerd
+        systemctl enable --now containerd.service
         
     - name: Unmask and enable kubelet
       ansible.builtin.systemd:
@@ -159,6 +159,19 @@
         masked: no
         enabled: yes
         state: started
+      register: my_kubelet_status
+
+    - name: Debuging my_kubelet_status
+      ansible.builtin.debug:
+        msg: "This is the Kubelet status: {{ my_kubelet_status }}" 
+
+    - name: Check containerd statis
+      ansible.builtin.shell: systemctl status containerd.service
+      register: my_containerd_status
+
+    - name: Debuging my_containerd_status
+      ansible.builtin.debug:
+        msg: "This is the Containerd status: {{ my_containerd_status }}" 
 
 # --- Control Plane Initialization ---
 - name: Initialize Kubernetes Control Plane
@@ -168,6 +181,14 @@
     pod_network_cidr: "10.216.0.0/16"
 
   tasks:
+    - name: Check config image pull on K8MASTERS
+      ansible.builtin.shell: kubeadm config images pull
+      register: my_images
+
+    - name: Debuging my_images
+      ansible.builtin.debug:
+        msg: "This is the Kube Images status: {{ my_images }}" 
+
     - name: Check if cluster already initialized
       ansible.builtin.stat:
         path: /etc/kubernetes/admin.conf
@@ -194,42 +215,43 @@
       when: not k8s_initialized.stat.exists
 
     # --- Update Flannel CNI Configuration ---
-    - name: Update Flannel CNI configuration with pod_network_cidr
-      ansible.builtin.copy:
-        dest: /etc/cni/net.d/10-flannel.conflist
-        content: |
-          {
-            "name": "cbr0",
-            "cniVersion": "0.3.1",
-            "plugins": [
-              {
-                "type": "flannel",
-                "delegate": {
-                  "hairpinMode": true,
-                  "isDefaultGateway": true,
-                  "ipMasq": true,
-                  "ipam": {
-                    "type": "host-local",
-                    "subnet": "{{ pod_network_cidr }}",  # Use pod_network_cidr from vars
-                    "rangeStart": "10.216.0.10",         # Starting IP for pods
-                    "rangeEnd": "10.216.255.254",       # Ending IP for pods
-                    "gateway": "10.216.0.1"             # Gateway for the network
-                  }
-                }
-              },
-              {
-                "type": "portmap",
-                "capabilities": {
-                  "portMappings": true
-                }
-              }
-            ]
-          }
-        mode: '0644'
+#    - name: Update Flannel CNI configuration with pod_network_cidr
+#      ansible.builtin.copy:
+#        dest: /etc/cni/net.d/10-flannel.conflist
+#        content: |
+#          {
+#            "name": "cbr0",
+#            "cniVersion": "0.3.1",
+#            "plugins": [
+#              {
+#                "type": "flannel",
+#                "delegate": {
+#                  "hairpinMode": true,
+#                  "isDefaultGateway": true,
+#                  "ipMasq": true,
+#                  "ipam": {
+#                    "type": "host-local",
+#                    "subnet": "{{ pod_network_cidr }}",  # Use pod_network_cidr from vars
+#                    "rangeStart": "10.216.0.10",         # Starting IP for pods
+#                    "rangeEnd": "10.216.255.254",       # Ending IP for pods
+#                    "gateway": "10.216.0.1"             # Gateway for the network
+#                  }
+#                }
+#              },
+#              {
+#                "type": "portmap",
+#                "capabilities": {
+#                  "portMappings": true
+#                }
+#              }
+#            ]
+#          }
+#        mode: '0644'
 
     - name: Deploy Flannel CNI
       ansible.builtin.shell: |
-        kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
+        kubectl create -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
+   #     kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
    #   when: not k8s_initialized.stat.exists
 
     - name: Wait for Flannel pods to be running on all nodes
@@ -247,10 +269,14 @@
         method: GET
         status_code: 200
         validate_certs: false
-      register: result
+      register: my_kubernetes_API_result
       until: result.status == 200
       retries: 10
       delay: 10
+
+    - name: Debuging my_kubernetes_API_result
+      ansible.builtin.debug:
+        msg: "This is the Kubernetes API status: {{ my_kubernetes_API_result }}" 
 
     - name: Upload certificate key (for control-plane join if needed)
       ansible.builtin.shell: kubeadm init phase upload-certs --upload-certs
@@ -268,6 +294,10 @@
       ansible.builtin.command: kubeadm token create --print-join-command
       register: join_cmd
       changed_when: false
+
+    - name: Debuging join_cmd
+      ansible.builtin.debug:
+        msg: "This is the JOIN_CMD result: {{ join_cmd }}" 
     
     - name: Set join command fact
       ansible.builtin.set_fact:
@@ -335,7 +365,19 @@
         executable: /bin/bash
       register: join_result
       failed_when: "'[ERROR' in join_result.stderr"
-    
+
+    - name: Debuging join_result variable
+      ansible.builtin.debug:
+        msg: "This is the JOIN_RESULT variable: {{ join_result }}" 
+
+    - name: Run Kubectl get nodes before unmarks and enable kubelet
+      ansible.builtin.shell: kubectl get nodes
+      register: my_get_nodes
+
+    - name: Debuging my_get_nodes variable
+      ansible.builtin.debug:
+        msg: "This is the MY_GET_NODES variable: {{ my_get_nodes }}" 
+      
     - name: Unmask and enable kubelet after join
       ansible.builtin.systemd:
         name: kubelet
@@ -344,38 +386,38 @@
         masked: no
 
     # --- Update Flannel CNI Configuration ---
-    - name: Update Flannel CNI configuration with pod_network_cidr
-      ansible.builtin.copy:
-        dest: /etc/cni/net.d/10-flannel.conflist
-        content: |
-          {
-            "name": "cbr0",
-            "cniVersion": "0.3.1",
-            "plugins": [
-              {
-                "type": "flannel",
-                "delegate": {
-                  "hairpinMode": true,
-                  "isDefaultGateway": true,
-                  "ipMasq": true,
-                  "ipam": {
-                    "type": "host-local",
-                    "subnet": "{{ pod_network_cidr }}",  # Use pod_network_cidr from vars
-                    "rangeStart": "10.216.0.10",         # Starting IP for pods
-                    "rangeEnd": "10.216.255.254",       # Ending IP for pods
-                    "gateway": "10.216.0.1"             # Gateway for the network
-                  }
-                }
-              },
-              {
-                "type": "portmap",
-                "capabilities": {
-                  "portMappings": true
-                }
-              }
-            ]
-          }
-        mode: '0644'
+#    - name: Update Flannel CNI configuration with pod_network_cidr
+#      ansible.builtin.copy:
+#        dest: /etc/cni/net.d/10-flannel.conflist
+#        content: |
+#          {
+#            "name": "cbr0",
+#            "cniVersion": "0.3.1",
+#            "plugins": [
+#              {
+#                "type": "flannel",
+#                "delegate": {
+#                  "hairpinMode": true,
+#                  "isDefaultGateway": true,
+#                  "ipMasq": true,
+#                  "ipam": {
+#                    "type": "host-local",
+#                    "subnet": "{{ pod_network_cidr }}",  # Use pod_network_cidr from vars
+#                    "rangeStart": "10.216.0.10",         # Starting IP for pods
+#                    "rangeEnd": "10.216.255.254",       # Ending IP for pods
+#                    "gateway": "10.216.0.1"             # Gateway for the network
+#                  }
+#                }
+#              },
+#              {
+#                "type": "portmap",
+#                "capabilities": {
+#                  "portMappings": true
+#                }
+#              }
+#            ]
+#          }
+#        mode: '0644'
 
     # --- Redeploy Kubernetes Pods ---
     - name: Wait for kube-apiserver to be available
