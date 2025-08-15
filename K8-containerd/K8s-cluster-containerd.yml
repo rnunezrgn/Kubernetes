@@ -3,7 +3,7 @@
   hosts: rhel9k8s
   become: true
   vars:
-    pod_network_cidr: "10.216.0.0/16"
+    pod_network_cidr: "10.244.0.0/16"  # Hardcoded subnet in Flannel!
 
   tasks:
     # RHEL Registration & Repos
@@ -357,12 +357,27 @@
         systemctl restart containerd
       ignore_errors: yes
     
+    - name: Start background kubelet log monitoring
+      ansible.builtin.shell: |
+        nohup journalctl -u kubelet -f > /tmp/kubelet.log 2>&1 &
+        echo $! > /tmp/kubelet_journal_pid
+      args:
+        executable: /bin/bash
+
     - name: Join node to cluster
       ansible.builtin.shell: "{{ join_command }} --ignore-preflight-errors=Hostname"
       args:
         executable: /bin/bash
       register: join_result
       failed_when: "'[ERROR' in join_result.stderr"
+
+    - name: Stop background kubelet log monitoring
+      ansible.builtin.shell: |
+        kill $(cat /tmp/kubelet_journal_pid)
+        rm -f /tmp/kubelet_journal_pid
+      args:
+        executable: /bin/bash
+      ignore_errors: yes  # In case the process exited early
 
     - name: Debuging join_result variable
       ansible.builtin.debug:

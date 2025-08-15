@@ -1,0 +1,54 @@
+🔧 reset-kubernetes.yml
+---
+- name: Reset Kubernetes on all nodes due to change the --pod-network-cidr value to switch from 10.216.0.0/16 to 10.244.0.0/16 for Flannel compatibility.
+  hosts: k8smasters:k8sworkers
+  become: true
+
+  tasks:
+    - name: Reset Kubernetes cluster
+      ansible.builtin.command: kubeadm reset -f
+
+    - name: Remove CNI config directory
+      ansible.builtin.file:
+        path: /etc/cni/net.d
+        state: absent
+
+    - name: Remove CNI state
+      ansible.builtin.file:
+        path: /var/lib/cni
+        state: absent
+
+    - name: Remove kubelet state
+      ansible.builtin.file:
+        path: /var/lib/kubelet
+        state: absent
+
+    - name: Remove Kubernetes configuration
+      ansible.builtin.file:
+        path: /etc/kubernetes
+        state: absent
+
+    - name: Remove kubectl config for user
+      ansible.builtin.file:
+        path: "{{ ansible_env.HOME }}/.kube"
+        state: absent
+
+    - name: Delete cni0 interface if it exists
+      ansible.builtin.command: ip link delete cni0
+      ignore_errors: yes
+
+    - name: Delete flannel.1 interface if it exists
+      ansible.builtin.command: ip link delete flannel.1
+      ignore_errors: yes
+
+    - name: Restart container runtime (containerd)
+      ansible.builtin.service:
+        name: containerd
+        state: restarted
+      when: ansible_facts.services['containerd'] is defined
+
+    - name: Restart container runtime (docker)
+      ansible.builtin.service:
+        name: docker
+        state: restarted
+      when: ansible_facts.services['docker'] is defined
