@@ -5,6 +5,10 @@
   become: true
 
   tasks:
+    - name: ATTENTION!!! You are about to RESET Kubernetes Cluster across all nodes. Confirm before continuing
+      pause:
+        prompt: Please confirm you want to RESET KUBERNETES CLUSTER! Press <RETURN> key to continue or "Ctrl+c" and then "a" to abort
+
     - name: Reset Kubernetes cluster
       ansible.builtin.command: kubeadm reset -f
 
