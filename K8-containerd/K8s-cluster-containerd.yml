@@ -184,7 +184,7 @@
   hosts: k8smasters
   become: true
   vars:
-    pod_network_cidr: "10.216.0.0/16"
+    pod_network_cidr: "10.244.0.0/16"
 
   tasks:
     - name: Check config image pull on K8MASTERS
