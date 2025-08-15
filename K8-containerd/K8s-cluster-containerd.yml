@@ -249,9 +249,8 @@
 #        mode: '0644'
 
     - name: Deploy Flannel CNI
-      ansible.builtin.shell: |
+      ansible.builtin.shell: kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
    #   kubectl create -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
-        kubectl apply -f https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
    #   when: not k8s_initialized.stat.exists
 
     - name: Wait for Flannel pods to be running on all nodes
