@@ -187,6 +187,10 @@
     pod_network_cidr: "10.244.0.0/16"
 
   tasks:
+    - name: SHOW ME! pod_network_cidr variable
+      ansible.builtin.debug:
+        msg: "This is the pod_network_cidr value {{ pod_network_cidr }}"
+
     - name: Check config image pull on K8MASTERS
       ansible.builtin.shell: kubeadm config images pull
       register: my_images
@@ -204,6 +208,10 @@
       ansible.builtin.command: kubeadm init --pod-network-cidr={{ pod_network_cidr }}
       when: not k8s_initialized.stat.exists
       register: kubeadm_output
+
+    - name: SHOW ME! kubeadm_output variable
+      ansible.builtin.debug:
+        msg: "This is the kubeadm_output value {{ kubeadm_output }}"
 
     - name: Setup kubeconfig for root
       ansible.builtin.shell: |
