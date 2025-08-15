@@ -1,0 +1,21 @@
+---
+- name: Delete all Kubernetes resources
+  hosts: k8smasters
+  become: true
+  vars:
+    kubeconfig_path: /root/.kube/config
+
+  tasks:
+    - name: Delete all resources in all namespaces
+      ansible.builtin.command: kubectl delete all --all --all-namespaces --kubeconfig={{ kubeconfig_path }}
+
+    - name: Delete all PVCs in all namespaces
+      ansible.builtin.command: kubectl delete pvc --all --all-namespaces --kubeconfig={{ kubeconfig_path }}
+
+    - name: Delete all configmaps and secrets in all namespaces
+      ansible.builtin.command: kubectl delete configmap,secret --all --all-namespaces --kubeconfig={{ kubeconfig_path }}
+
+    - name: Delete all CRDs
+      ansible.builtin.command: kubectl delete crd --all --kubeconfig={{ kubeconfig_path }}
+      ignore_errors: yes
+...
