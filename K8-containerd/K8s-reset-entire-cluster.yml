@@ -1,4 +1,3 @@
-🔧 reset-kubernetes.yml
 ---
 - name: Reset Kubernetes on all nodes due to change the --pod-network-cidr value to switch from 10.216.0.0/16 to 10.244.0.0/16 for Flannel compatibility.
   hosts: k8smasters:k8sworkers
