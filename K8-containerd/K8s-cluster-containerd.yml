@@ -121,8 +121,14 @@
           - epel-release
         state: present
 
-    - name: Enable kubelet
-      ansible.builtin.shell: systemctl enable --now kubelet
+    - name: Unmask kubelet services first which is currently masked — effectively disables it entirely by linking it to /dev/null. This is often done intentionally to prevent a service from starting, and it must be unmasked before it can be enabled or started
+      ansible.builtin.command: systemctl unmask kubelet
+
+    - name: Enable and start kubelet
+      ansible.builtin.service:
+        name: kubelet
+        enabled: yes
+        state: started
 
     - name: Ensure docker-ce-repo file is present
       ansible.builtin.stat:
