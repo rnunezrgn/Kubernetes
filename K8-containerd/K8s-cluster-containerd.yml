@@ -34,6 +34,16 @@
     - name: Disable SELinux
       ansible.posix.selinux:
         state: disabled
+    
+    - name: Stop firewalld
+      ansible.builtin.service:
+        name: firewalld
+        state: stopped
+
+    - name: Disable firewalld
+      ansible.builtin.service:
+        name: firewalld
+        enabled: false
 
     - name: Disable swap
       ansible.builtin.shell: |
