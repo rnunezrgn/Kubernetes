@@ -388,6 +388,16 @@
       args:
         executable: /bin/bash
 
+    - name: Unmask kubelet
+      ansible.builtin.command: systemctl unmask kubelet
+      ignore_errors: yes
+
+    - name: Enable and start kubelet
+      ansible.builtin.systemd:
+        name: kubelet
+        enabled: yes
+        state: started
+
     - name: Join node to cluster
       ansible.builtin.shell: "{{ join_command }} --ignore-preflight-errors=Hostname"
       args:
