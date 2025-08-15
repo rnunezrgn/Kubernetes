@@ -1,6 +1,6 @@
 ---
 - name: Deploy and test whoami application
-  hosts: kube_control_plane
+  hosts: k8smasters
   become: yes
   vars:
     whoami_port: 31000
