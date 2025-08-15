@@ -202,7 +202,7 @@
         wp_port: "{{ nodeports.results[2].stdout }}"
 
     - name: Test from inside cluster node IP
-     ansible.builtin.shell: |
+      ansible.builtin.shell: |
         curl -s http://{{ node_ip }}:{{ nginx_port }}
         curl -s http://{{ node_ip }}:{{ hello_port }}
         curl -s http://{{ node_ip }}:{{ wp_port }}
