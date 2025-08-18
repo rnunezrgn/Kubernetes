@@ -8,8 +8,8 @@
   tasks:
     - name: Copy whoami manifest to control plane
       copy:
-        src: files/whoami.yaml
-      #  dest: /tmp/whoami.yaml
+      #  src: files/whoami.yaml
+        dest: /tmp/whoami.yaml
         mode: '0644'
         content: |
          # HELLO-WORLD
