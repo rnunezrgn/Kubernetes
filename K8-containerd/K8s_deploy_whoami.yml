@@ -9,7 +9,49 @@
     - name: Copy whoami manifest to control plane
       copy:
         src: files/whoami.yaml
-        dest: /tmp/whoami.yaml
+      #  dest: /tmp/whoami.yaml
+        mode: '0644'
+        content: |
+         # HELLO-WORLD
+          ---
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: hello-world
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app: hello-world
+            template:
+              metadata:
+                labels:
+                  app: hello-world
+              spec:
+                tolerations:
+                - key: "node-role.kubernetes.io/control-plane"
+                  operator: "Exists"
+                  effect: "NoSchedule"
+                containers:
+                - name: hello-world
+                  image: hashicorp/http-echo
+                  args:
+                    - "-text=Hello Kubernetes!"
+                  ports:
+                  - containerPort: 5678
+          ---
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: hello-world
+          spec:
+            type: NodePort
+            selector:
+              app: hello-world
+            ports:
+            - port: 5678
+              targetPort: 5678
+              nodePort: 30567
 
     - name: Apply whoami manifest
       command: kubectl apply -f /tmp/whoami.yaml
