@@ -1,0 +1,49 @@
+---
+version: 3
+
+options:
+  package_manager_path: /usr/bin/microdnf
+
+images:
+  base_image:
+    name: registry.redhat.io/ansible-automation-platform-25/ee-supported-rhel9:latest
+
+dependencies:
+  python:
+    - kubernetes
+
+  system:
+    - gcc           # Required for building some Python packages
+    - python3-devel
+    - libffi-devel
+    - openssl-devel
+    - make
+    - krb5-devel
+    - libssh-devel
+    - python3-devel
+    - libssh-devel
+    - python3-cffi
+    - python3-cryptography
+    - python3-lxml
+    - python3-netaddr
+    - python3-jmespath
+    - python3-rpm
+    - systemd-devel
+#    - libcurl
+    - libuuid
+    - libxml2-devel
+
+  ansible_core:
+    package_pip: ansible-core==2.15.6
+  ansible_runner:
+    package_pip: ansible-runner==2.3.3
+
+  galaxy:
+    collections:
+      - name: kubernetes.core
+      - name: community.kubernetes  # Optional for advanced k8s management
+
+additional_build_steps:
+  prepend_final:
+    - COPY kube/config /root/.kube/config
+    - ENV KUBECONFIG=/root/.kube/config
