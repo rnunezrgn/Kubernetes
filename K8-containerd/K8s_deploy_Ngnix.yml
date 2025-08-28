@@ -1,0 +1,55 @@
+---
+- name: Deploy an Nginx application
+  hosts: k8smasters
+  become: yes
+  
+  tasks:
+    - name: Ensure the app namespace exists
+      kubernetes.core.k8s:
+        api_version: v1
+        kind: Namespace
+        name: my-nginx-app
+        state: present
+
+    - name: Deploy the Nginx application deployment
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: nginx-deployment
+            namespace: my-nginx-app
+          spec:
+            replicas: 3
+            selector:
+              matchLabels:
+                app: nginx
+            template:
+              metadata:
+                labels:
+                  app: nginx
+              spec:
+                containers:
+                  - name: nginx
+                    image: nginx:1.24
+                    ports:
+                      - containerPort: 80
+
+    - name: Expose the Nginx deployment with a service
+      kubernetes.core.k8s:
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: nginx-service
+            namespace: my-nginx-app
+          spec:
+            selector:
+              app: nginx
+            ports:
+              - protocol: TCP
+                port: 80
+                targetPort: 80
+            type: LoadBalancer
