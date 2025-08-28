@@ -1,8 +1,9 @@
 ---
-- name: Deploy an Nginx application
+- name: Deploy and validate an NGINX application in Kubernetes
   hosts: k8smasters
   become: yes
-  
+  gather_facts: false
+
   tasks:
     - name: Ensure the app namespace exists
       kubernetes.core.k8s:
@@ -11,7 +12,7 @@
         name: my-nginx-app
         state: present
 
-    - name: Deploy the Nginx application deployment
+    - name: Deploy the NGINX application deployment
       kubernetes.core.k8s:
         state: present
         definition:
@@ -36,7 +37,7 @@
                     ports:
                       - containerPort: 80
 
-    - name: Expose the Nginx deployment with a service
+    - name: Expose the NGINX deployment with a LoadBalancer service
       kubernetes.core.k8s:
         state: present
         definition:
@@ -53,3 +54,40 @@
                 port: 80
                 targetPort: 80
             type: LoadBalancer
+
+    - name: Wait for NGINX pods to be scheduled and running
+      kubernetes.core.k8s_info:
+        kind: Pod
+        namespace: my-nginx-app
+        label_selectors:
+          - app=nginx
+      register: nginx_pods
+      retries: 10
+      delay: 5
+      until: >
+        nginx_pods.resources | length == 3 and
+        (nginx_pods.resources | map(attribute='status.phase') | list | unique) == ['Running']
+
+    - name: Confirm all NGINX pods are running
+      assert:
+        that:
+          - nginx_pods.resources | length == 3
+          - nginx_pods.resources | map(attribute='status.phase') | list | unique == ['Running']
+        fail_msg: "❌ Not all NGINX pods are running as expected."
+        success_msg: "✅ All NGINX pods are running successfully."
+
+    - name: Retrieve NGINX service details
+      kubernetes.core.k8s_info:
+        kind: Service
+        namespace: my-nginx-app
+        name: nginx-service
+      register: svc_info
+
+    - name: Show NGINX service IP
+      debug:
+        msg: >
+          NGINX Service IP: {{
+            svc_info.resources[0].status.loadBalancer.ingress[0].ip
+              if svc_info.resources[0].status.loadBalancer.ingress is defined
+              else svc_info.resources[0].spec.clusterIP
+          }}
