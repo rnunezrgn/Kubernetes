@@ -1,6 +1,6 @@
 ---
 - name: Deploy and validate an NGINX application in Kubernetes
-  hosts: k8smasters
+  hosts: localhost
   become: yes
   gather_facts: false
   vars:
