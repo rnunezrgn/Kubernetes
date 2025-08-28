@@ -29,7 +29,6 @@ dependencies:
     - python3-jmespath
     - python3-rpm
     - systemd-devel
-#    - libcurl
     - libuuid
     - libxml2-devel
 
